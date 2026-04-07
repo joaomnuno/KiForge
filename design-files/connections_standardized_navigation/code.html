@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Connections | Hardware Engine</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#879390",
+                        "surface-bright": "#393939",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary": "#b4cad6",
+                        "primary-fixed": "#84f5e8",
+                        "secondary-container": "#374c56",
+                        "surface-container-highest": "#353534",
+                        "on-surface-variant": "#bcc9c5",
+                        "primary-container": "#1ea296",
+                        "on-background": "#e5e2e1",
+                        "surface-tint": "#66d9cc",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-primary": "#003732",
+                        "tertiary": "#ffb59c",
+                        "surface-dim": "#131313",
+                        "on-surface": "#e5e2e1",
+                        "primary": "#66d9cc",
+                        "outline-variant": "#3d4946",
+                        "surface": "#131313",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container": "#201f1f",
+                        "background": "#131313",
+                        "error": "#ffb4ab",
+                        "error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["JetBrains Mono"]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        body { font-family: 'Inter', sans-serif; }
+        .mono-text { font-family: 'JetBrains Mono', monospace; }
+        .headline-text { font-family: 'Space Grotesk', sans-serif; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3d4946; border-radius: 2px; }
+    </style>
+</head>
+<body class="bg-surface-dim text-on-surface selection:bg-primary/30 h-screen overflow-hidden flex flex-col">
+<!-- TopNavBar Construction -->
+<header class="bg-[#131313] text-[#66d9cc] font-['Space_Grotesk'] tracking-tight docked full-width top-0 flex justify-between items-center w-full px-6 h-14 z-50 shrink-0 border-b border-outline-variant/20">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-[#66d9cc]">Hardware Engine</span>
+<div class="flex items-center gap-4 text-slate-400 font-['Inter'] text-sm">
+<span class="text-[#66d9cc] border-b-2 border-[#66d9cc] py-1">Connection Planner</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="bg-[#1ea296] text-[#00302b] px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all active:scale-95 duration-150">
+<span class="material-symbols-outlined text-sm">add</span>
+            New Project
+        </button>
+<div class="flex items-center gap-1">
+<button class="p-2 text-slate-400 hover:bg-[#2a2a2a] rounded transition-colors duration-150">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-[#2a2a2a] rounded transition-colors duration-150">
+<span class="material-symbols-outlined">help</span>
+</button>
+</div>
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAStU5SepffH5smlU9bGI03UVOlVg8Yx1RFtsmxcupUpcSl72Z8I4_OyclKpxWC-td6RjofJNzNW8BRC0lZe1Cr7aEJm7DOpV6f5n2kSc6na9JkpwCeFUO7bpvRQYUNWhTa35Rf7s1tLU0zotWtaD7A-9DvbU9jtoHlc05S8OngHmQIVK7vTbVkCei6aSXAyNEczaUV_MMx37B9tobiRYAONjU3_ItizfsqAyKoU47ggq5nf4XXvshY5kR8x425nz6UNwnuhN8sZ6FN"/>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Left Panel (Sidebar - Updated to match Image 7) -->
+<aside class="w-[240px] bg-[#0e0e0e] border-r border-outline-variant/10 flex flex-col shrink-0">
+<!-- Logo/Project Header -->
+<div class="p-5 flex items-center gap-3">
+<div class="w-9 h-9 bg-[#1ea296]/20 rounded-md flex items-center justify-center border border-[#1ea296]/30">
+<span class="material-symbols-outlined text-[#1ea296] text-xl">grid_view</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-100">Project Alpha</span>
+<span class="text-[9px] text-slate-500 font-mono tracking-wider">HARDWARE V1.0</span>
+</div>
+</div>
+<!-- Navigation -->
+<nav class="flex-1 px-3 py-4 space-y-1">
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded-md bg-surface-container-high text-[#66d9cc] border-l-2 border-[#66d9cc] transition-colors">
+<span class="material-symbols-outlined text-xl">folder</span>
+<span class="text-xs font-medium">Projects</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-400 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+<span class="text-xs font-medium">Templates</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-400 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-xl">widgets</span>
+<span class="text-xs font-medium">Library</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-400 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-xl">memory</span>
+<span class="text-xs font-medium">Devices</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-400 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-xl">settings</span>
+<span class="text-xs font-medium">Settings</span>
+</button>
+</nav>
+<!-- Sidebar Footer -->
+<div class="p-4 border-t border-outline-variant/10">
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-400 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-xl">help</span>
+<span class="text-xs font-medium">Support</span>
+</button>
+</div>
+</aside>
+<!-- Content Area -->
+<div class="flex-1 flex flex-col overflow-hidden">
+<!-- Main Page Header -->
+<div class="bg-surface-container-low px-6 py-4 flex items-center justify-between border-b border-outline-variant/10 shrink-0">
+<div>
+<h1 class="headline-text text-2xl font-bold text-slate-100">Connections</h1>
+<p class="text-sm text-slate-400">Define how project devices communicate and assign controller interfaces.</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex flex-col items-end gap-1 font-mono text-[10px] text-slate-500 uppercase tracking-tight">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> 4/6 devices connected</span>
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-error"></span> 2 unresolved conflicts</span>
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> 1 unassigned optional signal</span>
+</div>
+<div class="h-10 w-px bg-outline-variant/20 mx-2"></div>
+<div class="flex gap-2">
+<button class="bg-surface-container-high border border-outline-variant/30 text-slate-300 px-3 py-2 rounded text-xs font-bold hover:bg-surface-container-highest transition-colors">Auto-assign Suggestions</button>
+<button class="bg-surface-container-high border border-outline-variant/30 text-slate-300 px-3 py-2 rounded text-xs font-bold hover:bg-surface-container-highest transition-colors">Validate</button>
+<button class="bg-primary text-[#003732] px-4 py-2 rounded text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-primary/10">
+<span class="material-symbols-outlined text-sm">add_link</span>
+                        New Connection
+                    </button>
+</div>
+</div>
+</div>
+<div class="flex flex-1 overflow-hidden">
+<!-- Left Sub-Panel (Device Navigator) -->
+<aside class="w-64 bg-surface-container-lowest border-r border-outline-variant/10 flex flex-col shrink-0">
+<div class="p-4 border-b border-outline-variant/10">
+<h3 class="headline-text text-[10px] font-bold text-slate-500 uppercase tracking-widest">Project Devices</h3>
+</div>
+<nav class="flex-1 overflow-y-auto p-2">
+<ul class="space-y-1">
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded bg-surface-container-high/50 border border-primary/20 text-left transition-all">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-100">Flash</span>
+<div class="flex gap-1 mt-1">
+<span class="bg-primary/10 text-primary text-[9px] px-1 rounded font-mono">SPI</span>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(102,217,204,0.5)]"></span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded hover:bg-surface-container-high/30 text-left transition-all group">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-400 group-hover:text-slate-200 transition-colors">IMU</span>
+<div class="flex gap-1 mt-1">
+<span class="bg-slate-700/50 text-slate-400 text-[9px] px-1 rounded font-mono">I2C</span>
+<span class="bg-slate-700/50 text-slate-400 text-[9px] px-1 rounded font-mono">INT</span>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]"></span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded hover:bg-surface-container-high/30 text-left transition-all group">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-400 group-hover:text-slate-200 transition-colors">Barometer</span>
+<div class="flex gap-1 mt-1">
+<span class="bg-slate-700/50 text-slate-400 text-[9px] px-1 rounded font-mono">I2C</span>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary/40"></span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded hover:bg-surface-container-high/30 text-left transition-all group">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-400 group-hover:text-slate-200 transition-colors">USB-C</span>
+<div class="flex gap-1 mt-1">
+<span class="bg-slate-700/50 text-slate-400 text-[9px] px-1 rounded font-mono">USB_FS</span>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-error shadow-[0_0_8px_rgba(255,180,171,0.3)]"></span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded hover:bg-surface-container-high/30 text-left transition-all group">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-400 group-hover:text-slate-200 transition-colors">Debug Header</span>
+<div class="flex gap-1 mt-1">
+<span class="bg-slate-700/50 text-slate-400 text-[9px] px-1 rounded font-mono">SWD</span>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-slate-700"></span>
+</button>
+</li>
+</ul>
+</nav>
+</aside>
+<!-- Center Panel (Connections Editor) -->
+<main class="flex-1 bg-surface-dim flex flex-col overflow-hidden">
+<!-- Top Half: Summary Cards -->
+<div class="h-1/3 border-b border-outline-variant/10 p-6 overflow-y-auto bg-surface-container-lowest/30">
+<h2 class="headline-text text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Active Connections</h2>
+<div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+<div class="bg-surface-container-low border border-primary/30 p-3 rounded-lg flex items-center justify-between relative overflow-hidden group cursor-pointer ring-1 ring-primary/20">
+<div class="z-10">
+<div class="mono-text text-[10px] text-primary mb-1">SPI_BUS_01</div>
+<div class="flex items-center gap-2">
+<span class="font-bold text-slate-200 text-sm">Flash</span>
+<span class="material-symbols-outlined text-xs text-slate-500">swap_horiz</span>
+<span class="font-bold text-slate-200 text-sm">SPI1</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary/40 group-hover:text-primary transition-colors">link</span>
+</div>
+<div class="bg-surface-container-low border border-outline-variant/10 p-3 rounded-lg flex items-center justify-between group cursor-pointer hover:bg-surface-container-high transition-all">
+<div>
+<div class="mono-text text-[10px] text-slate-500 mb-1">I2C_BUS_01</div>
+<div class="flex items-center gap-2">
+<span class="font-bold text-slate-300 text-sm">IMU</span>
+<span class="material-symbols-outlined text-xs text-slate-500">swap_horiz</span>
+<span class="font-bold text-slate-300 text-sm">I2C1</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-600 group-hover:text-amber-400 transition-colors">warning</span>
+</div>
+<div class="bg-surface-container-low border border-outline-variant/10 p-3 rounded-lg flex flex-col items-center justify-center border-dashed opacity-50 hover:opacity-100 transition-all cursor-pointer">
+<span class="material-symbols-outlined text-slate-500">add</span>
+<span class="text-[10px] font-bold uppercase text-slate-500">Add Connection</span>
+</div>
+</div>
+</div>
+<!-- Bottom Half: Detailed Pin Mapping Editor -->
+<div class="flex-1 flex flex-col overflow-hidden bg-surface-container-low/40">
+<div class="px-6 py-3 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-high/20">
+<div class="flex items-center gap-3">
+<span class="text-xs font-bold text-slate-100 headline-text">STM32H743ZI <span class="text-slate-500 font-normal mx-1">↔</span> W25Q128JV (Flash)</span>
+<span class="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded font-mono uppercase">SPI Master</span>
+</div>
+<div class="flex gap-4 items-center">
+<span class="text-[10px] text-slate-500 italic">4 of 4 signals mapped</span>
+<button class="bg-primary/10 text-primary px-3 py-1 rounded text-[10px] font-bold hover:bg-primary/20">Save Mapping</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-6 py-4">
+<table class="w-full border-separate border-spacing-y-2">
+<thead>
+<tr class="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-left">
+<th class="px-4 py-2">Signal</th>
+<th class="px-4 py-2">Pin Selection</th>
+<th class="px-4 py-2">Status / Details</th>
+</tr>
+</thead>
+<tbody>
+<!-- Row 1 -->
+<tr class="bg-surface-container-high/30 rounded-lg group">
+<td class="px-4 py-3 rounded-l-lg">
+<span class="mono-text text-xs font-medium text-slate-200">SCK</span>
+</td>
+<td class="px-4 py-3">
+<div class="relative inline-block">
+<button class="inline-flex items-center gap-2 bg-surface-container-lowest px-2 py-1 rounded border border-outline-variant/30 text-primary hover:border-primary/50 transition-colors">
+<span class="mono-text text-xs">PA5</span>
+<span class="material-symbols-outlined text-xs">arrow_drop_down</span>
+</button>
+</div>
+</td>
+<td class="px-4 py-3 rounded-r-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 text-[11px] text-slate-400">
+<span class="material-symbols-outlined text-primary text-sm">check_circle</span>
+<span>AF5 (SPI1_SCK)</span>
+</div>
+<button class="opacity-0 group-hover:opacity-100 material-symbols-outlined text-slate-500 hover:text-slate-200 text-base transition-all">more_vert</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-high/30 rounded-lg group">
+<td class="px-4 py-3 rounded-l-lg">
+<span class="mono-text text-xs font-medium text-slate-200">MISO</span>
+</td>
+<td class="px-4 py-3">
+<div class="relative inline-block">
+<button class="inline-flex items-center gap-2 bg-surface-container-lowest px-2 py-1 rounded border border-outline-variant/30 text-primary">
+<span class="mono-text text-xs">PA6</span>
+<span class="material-symbols-outlined text-xs">arrow_drop_down</span>
+</button>
+</div>
+</td>
+<td class="px-4 py-3 rounded-r-lg">
+<div class="flex items-center gap-2 text-[11px] text-slate-400">
+<span class="material-symbols-outlined text-primary text-sm">check_circle</span>
+<span>AF5 (SPI1_MISO)</span>
+</div>
+</td>
+</tr>
+<!-- Row 3 (Conflict Example) -->
+<tr class="bg-error-container/5 rounded-lg border border-error/10">
+<td class="px-4 py-3 rounded-l-lg">
+<span class="mono-text text-xs font-medium text-slate-200">MOSI</span>
+</td>
+<td class="px-4 py-3">
+<div class="relative">
+<button class="inline-flex items-center gap-2 bg-surface-container-lowest px-2 py-1 rounded border border-error/50 text-error">
+<span class="mono-text text-xs">PB3</span>
+<span class="material-symbols-outlined text-xs">arrow_drop_down</span>
+</button>
+<!-- Dropdown Mockup (Expanded state logic) -->
+<div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-highest border border-outline-variant/30 rounded-lg shadow-xl z-20 overflow-hidden">
+<div class="p-2 border-b border-outline-variant/20 bg-surface-container-high text-[10px] font-bold text-slate-500 uppercase">Available Candidates</div>
+<button class="w-full text-left p-2 hover:bg-primary/10 text-[11px] flex justify-between items-center group">
+<span class="mono-text text-slate-400 group-hover:text-primary">PA7 — SPI1_MOSI</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+</button>
+<button class="w-full text-left p-2 bg-error/5 text-[11px] flex justify-between items-center opacity-50 cursor-not-allowed">
+<span class="mono-text text-slate-500 line-through">PB3 — SPI1_MOSI</span>
+<span class="material-symbols-outlined text-xs text-error">block</span>
+</button>
+<button class="w-full text-left p-2 hover:bg-primary/10 text-[11px] flex justify-between items-center group">
+<span class="mono-text text-slate-400 group-hover:text-primary">PC10 — SPI3_MOSI</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+</button>
+</div>
+</div>
+</td>
+<td class="px-4 py-3 rounded-r-lg">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-2 text-[11px] text-error font-medium">
+<span class="material-symbols-outlined text-sm">warning</span>
+<span>PB3 Used by: Debug Header / SWO (Conflict)</span>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container-high/30 rounded-lg">
+<td class="px-4 py-3 rounded-l-lg">
+<span class="mono-text text-xs font-medium text-slate-200">CS</span>
+</td>
+<td class="px-4 py-3">
+<button class="inline-flex items-center gap-2 bg-surface-container-lowest px-2 py-1 rounded border border-outline-variant/30 text-tertiary">
+<span class="mono-text text-xs">PB0</span>
+<span class="material-symbols-outlined text-xs">arrow_drop_down</span>
+</button>
+</td>
+<td class="px-4 py-3 rounded-r-lg">
+<div class="flex items-center gap-2 text-[11px] text-tertiary font-medium">
+<span class="material-symbols-outlined text-sm">help_outline</span>
+<span>GPIO Output (Manual check req)</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Guidance Footer -->
+<div class="p-4 bg-surface-container-high/30 text-[10px] text-slate-500 border-t border-outline-variant/10 italic flex justify-between">
+<span>Note: STM32H7 series supports hardware chip-select management or manual GPIO toggling for Flash interfaces.</span>
+<span>Controller Reference: RM0433 Rev 7</span>
+</div>
+</div>
+</main>
+<!-- Right Panel (Contextual Inspector) -->
+<aside class="w-80 bg-surface-container-high shrink-0 flex flex-col border-l border-outline-variant/10 overflow-y-auto">
+<!-- Device Info -->
+<div class="p-4 border-b border-outline-variant/20">
+<h3 class="headline-text text-xs font-bold text-slate-100 mb-4 uppercase tracking-widest">Inspector</h3>
+<div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-lg">memory</span>
+</div>
+<div>
+<div class="text-[11px] font-bold text-slate-200">STM32H743ZIT6</div>
+<div class="text-[9px] text-slate-500 font-mono">LQFP144 • 480MHz</div>
+</div>
+</div>
+<div class="h-px bg-outline-variant/10 my-2"></div>
+<div class="grid grid-cols-2 gap-2 text-[10px]">
+<div>
+<span class="text-slate-500 block">Family:</span>
+<span class="text-slate-300 font-medium">Cortex-M7</span>
+</div>
+<div>
+<span class="text-slate-500 block">Package:</span>
+<span class="text-slate-300 font-medium">LQFP144</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Controller Availability -->
+<div class="p-4 border-b border-outline-variant/20">
+<h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Controller Availability</h4>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-[10px]">
+<span class="text-slate-400">SPI1 (Flash Interface)</span>
+<span class="bg-primary/20 text-primary px-1.5 rounded font-bold uppercase">Busy</span>
+</div>
+<div class="flex justify-between items-center text-[10px]">
+<span class="text-slate-400">SPI2</span>
+<span class="bg-slate-700 text-slate-400 px-1.5 rounded font-bold uppercase">Available</span>
+</div>
+<div class="flex justify-between items-center text-[10px]">
+<span class="text-slate-400">I2C1 (Internal Bus)</span>
+<span class="bg-amber-500/20 text-amber-500 px-1.5 rounded font-bold uppercase">Shared</span>
+</div>
+</div>
+</div>
+<!-- Pinout Visualization -->
+<div class="p-4 border-b border-outline-variant/20">
+<h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 text-center">Package Preview</h4>
+<div class="relative aspect-square max-w-[160px] mx-auto border-2 border-slate-700 bg-surface-container-lowest rounded flex items-center justify-center p-2">
+<!-- Decorative Pin indicators -->
+<div class="absolute -top-1 inset-x-4 flex justify-between"><div class="w-1 h-2 bg-slate-700"></div><div class="w-1 h-2 bg-slate-700"></div><div class="w-1 h-2 bg-slate-700"></div><div class="w-1 h-2 bg-primary"></div><div class="w-1 h-2 bg-slate-700"></div></div>
+<div class="absolute -bottom-1 inset-x-4 flex justify-between"><div class="w-1 h-2 bg-slate-700"></div><div class="w-1 h-2 bg-slate-700"></div><div class="w-1 h-2 bg-slate-700"></div><div class="w-1 h-2 bg-slate-700"></div><div class="w-1 h-2 bg-slate-700"></div></div>
+<div class="absolute -left-1 inset-y-4 flex flex-col justify-between"><div class="w-2 h-1 bg-slate-700"></div><div class="w-2 h-1 bg-primary"></div><div class="w-2 h-1 bg-primary"></div><div class="w-2 h-1 bg-slate-700"></div><div class="w-2 h-1 bg-slate-700"></div></div>
+<div class="absolute -right-1 inset-y-4 flex flex-col justify-between"><div class="w-2 h-1 bg-slate-700"></div><div class="w-2 h-1 bg-slate-700"></div><div class="w-2 h-1 bg-slate-700"></div><div class="w-2 h-1 bg-slate-700"></div><div class="w-2 h-1 bg-slate-700"></div></div>
+<div class="text-[8px] font-mono text-slate-600 text-center uppercase tracking-tighter">
+<span class="material-symbols-outlined text-2xl block mb-1 opacity-20">grid_view</span>
+                            LQFP144
+                        </div>
+</div>
+<div class="mt-4 flex flex-col gap-2">
+<div class="flex justify-between items-center text-[10px]">
+<span class="text-slate-500 uppercase tracking-widest font-bold">Pin Usage</span>
+<span class="text-primary font-mono">34 / 144 Used</span>
+</div>
+<div class="h-1 bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[24%]"></div>
+</div>
+</div>
+</div>
+<!-- Warnings -->
+<div class="p-4 mt-auto">
+<h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Alerts</h4>
+<div class="bg-error/10 p-3 rounded border border-error/20 flex gap-2">
+<span class="material-symbols-outlined text-error text-sm shrink-0">error</span>
+<p class="text-[10px] text-slate-300 leading-tight">
+                            Conflict detected on <span class="font-bold text-error">PB3</span>. Signal <span class="mono-text text-[9px]">SPI1_MOSI</span> and <span class="mono-text text-[9px]">SYS_SWO</span> assigned to same pin.
+                        </p>
+</div>
+</div>
+<div class="p-4 border-t border-outline-variant/10">
+<button class="w-full bg-surface-container-high border border-outline-variant/30 text-slate-300 py-2 rounded text-[10px] font-bold hover:bg-surface-container-highest transition-colors uppercase tracking-widest">Export Design Report</button>
+</div>
+</aside>
+</div>
+</div>
+</div>
+</body></html>

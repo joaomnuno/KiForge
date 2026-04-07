@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Logic Foundry - New Project Setup</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "outline": "#879390",
+                      "on-tertiary-fixed": "#390c00",
+                      "surface-bright": "#393939",
+                      "inverse-surface": "#e5e2e1",
+                      "on-secondary-container": "#a6bcc7",
+                      "tertiary-fixed-dim": "#ffb59c",
+                      "secondary": "#b4cad6",
+                      "primary-fixed": "#84f5e8",
+                      "secondary-container": "#374c56",
+                      "on-secondary-fixed": "#071e27",
+                      "surface-container-highest": "#353534",
+                      "on-primary-fixed-variant": "#005049",
+                      "on-surface-variant": "#bcc9c5",
+                      "primary-container": "#1ea296",
+                      "secondary-fixed-dim": "#b4cad6",
+                      "on-background": "#e5e2e1",
+                      "on-secondary-fixed-variant": "#354a53",
+                      "surface-tint": "#66d9cc",
+                      "surface-container-lowest": "#0e0e0e",
+                      "primary-fixed-dim": "#66d9cc",
+                      "on-primary": "#003732",
+                      "inverse-primary": "#006a62",
+                      "on-tertiary-fixed-variant": "#763219",
+                      "tertiary-container": "#d2795b",
+                      "tertiary-fixed": "#ffdbcf",
+                      "surface-container-low": "#1c1b1b",
+                      "on-tertiary": "#591c05",
+                      "on-error-container": "#ffdad6",
+                      "surface-variant": "#353534",
+                      "tertiary": "#ffb59c",
+                      "surface-dim": "#131313",
+                      "on-surface": "#e5e2e1",
+                      "on-primary-fixed": "#00201d",
+                      "primary": "#66d9cc",
+                      "outline-variant": "#3d4946",
+                      "on-error": "#690005",
+                      "surface": "#131313",
+                      "inverse-on-surface": "#313030",
+                      "error": "#ffb4ab",
+                      "on-tertiary-container": "#501601",
+                      "secondary-fixed": "#cfe6f2",
+                      "surface-container-high": "#2a2a2a",
+                      "surface-container": "#201f1f",
+                      "background": "#131313",
+                      "on-secondary": "#1e333c",
+                      "error-container": "#93000a",
+                      "on-primary-container": "#00302b"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Space Grotesk"],
+                      "body": ["Inter"],
+                      "label": ["Inter"],
+                      "mono": ["JetBrains Mono"]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .font-headline { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface-dim text-on-surface min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-[#131313] flex justify-between items-center w-full px-6 h-14 docked full-width top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold text-[#66d9cc] font-['Space_Grotesk'] tracking-tight">Hardware Engine</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1 bg-[#2a2a2a] rounded text-slate-400 hover:bg-[#2a2a2a] transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-sm">settings</span>
+<span class="text-xs font-['Inter'] font-medium">settings</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-[#2a2a2a] rounded text-slate-400 hover:bg-[#2a2a2a] transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-sm">help</span>
+<span class="text-xs font-['Inter'] font-medium">help</span>
+</div>
+<button class="bg-[#66d9cc] text-[#00302b] px-4 py-1.5 rounded-lg text-sm font-bold font-['Space_Grotesk'] tracking-tight hover:brightness-110 transition-all active:scale-95">
+                New Project
+            </button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Close-up portrait of a professional male engineer in a minimalist modern studio setting with soft cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZChaA_nZhNmIKzvVvUs-T31_PN3mflSzTEEQHa6GgHWlzP3pstKiFH6OqUbg5sIn5aTl_ck1llE_ck1llE_qEhrbU7t2Nc6SJpINrzurAcWpmprkZtskryRSle3_CxKYCU8TQdmB0k881XBdn7UyuHtpWGwM5aVETolrJBdITOE5_Mmv1XZfE3iRlr1VMj3KdvkzQq1k0gVBOoLekv5e2LrX7gM78oz2Ecw2P8aqlvs1xsoix02kdMYFvP11oHmwiSlLj5ehlRN-atqjgR8N"/>
+</div>
+</div>
+</nav>
+<main class="flex-1 flex overflow-hidden">
+<!-- Sidebar (Updated from IMAGE_7) -->
+<aside class="w-64 bg-[#131313] border-r border-outline-variant/15 flex flex-col flex-shrink-0">
+<div class="p-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary/20 rounded flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">developer_board</span>
+</div>
+<div>
+<h2 class="font-headline font-bold text-on-surface leading-tight">Project Alpha</h2>
+<p class="text-[10px] text-outline font-bold tracking-widest uppercase">Hardware V1.0</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 bg-surface-container-highest rounded-lg text-primary transition-all" href="#">
+<span class="material-symbols-outlined text-xl">folder</span>
+<span class="text-sm font-medium">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-xl">sticky_note_2</span>
+<span class="text-sm font-medium">Templates</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-xl">widgets</span>
+<span class="text-sm font-medium">Library</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-xl">memory</span>
+<span class="text-sm font-medium">Devices</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-xl">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<div class="p-4 mt-auto border-t border-outline-variant/10">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined text-xl">help_outline</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+</div>
+</aside>
+<!-- Content Canvas -->
+<div class="flex-1 flex justify-center items-center p-8 bg-surface-container-low overflow-y-auto">
+<div class="max-w-2xl w-full space-y-12">
+<!-- Header -->
+<header class="space-y-2">
+<h1 class="text-4xl font-headline font-bold text-on-surface tracking-tight">Logic Foundry</h1>
+<p class="text-on-surface-variant text-lg">Define your project parameters and target hardware.</p>
+</header>
+<!-- Form Section -->
+<div class="space-y-8">
+<!-- Project Name -->
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-widest text-outline">Project Name</label>
+<input class="w-full bg-surface-container-high border-none rounded-lg p-4 text-on-surface font-medium focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="Enter project name..." type="text" value="Flight Controller Rev B"/>
+</div>
+<!-- Description -->
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-widest text-outline">Description</label>
+<textarea class="w-full bg-surface-container-high border-none rounded-lg p-4 text-on-surface font-medium focus:ring-2 focus:ring-primary outline-none transition-all resize-none" placeholder="Describe the project scope..." rows="3">Next-gen drone controller with high-speed SPI logging.</textarea>
+</div>
+<!-- Target Controller -->
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-widest text-outline">Target Controller</label>
+<div class="relative group">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
+<span class="material-symbols-outlined">memory</span>
+</div>
+<input class="w-full bg-surface-container-high border-none rounded-lg p-4 pl-12 text-on-surface font-medium focus:ring-2 focus:ring-primary outline-none transition-all" type="text" value="STM32F405RG"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-outline group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</div>
+</div>
+<div class="flex gap-2 mt-3">
+<span class="px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded border border-primary/20">CORTEX-M4</span>
+<span class="px-2 py-1 bg-surface-container-highest text-outline text-[10px] font-bold rounded">168MHZ</span>
+<span class="px-2 py-1 bg-surface-container-highest text-outline text-[10px] font-bold rounded">1MB FLASH</span>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex items-center justify-between pt-8 border-t border-outline-variant/15">
+<button class="text-on-surface-variant hover:text-on-surface px-6 py-2 transition-colors font-medium">Cancel</button>
+<button class="px-8 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all">
+                        Create Project
+                    </button>
+</div>
+</div>
+</div>
+<!-- Inspector Panel (Right) -->
+<aside class="w-80 bg-surface-container-high p-6 flex flex-col gap-8 border-l border-outline-variant/15 flex-shrink-0">
+<div class="space-y-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">info</span>
+</div>
+<div>
+<h3 class="text-xs font-bold uppercase tracking-wider text-outline">Selected Controller</h3>
+<p class="font-bold text-on-surface">STM32F405RG</p>
+</div>
+</div>
+<!-- Schematic Preview Recessed Area -->
+<div class="aspect-square bg-surface-container-low rounded-xl flex items-center justify-center border border-outline-variant/10 relative overflow-hidden group">
+<div class="absolute inset-0 bg-[radial-gradient(#3d4946_1px,transparent_1px)] [background-size:16px_16px] opacity-20"></div>
+<span class="material-symbols-outlined text-6xl text-outline-variant group-hover:text-primary/40 transition-colors">schema</span>
+<div class="absolute bottom-3 left-3 text-[10px] font-mono text-outline-variant">LQFP-64 PKG</div>
+</div>
+<!-- Hardware Specs -->
+<div class="space-y-4">
+<h4 class="text-[10px] font-bold uppercase tracking-[0.2em] text-outline">Technical Specifications</h4>
+<div class="grid grid-cols-1 gap-2 font-mono text-sm">
+<div class="flex justify-between items-center p-2 bg-surface-container-low rounded">
+<span class="text-outline-variant">Pins</span>
+<span class="text-primary font-medium">64 pins</span>
+</div>
+<div class="flex justify-between items-center p-2 bg-surface-container-low rounded">
+<span class="text-outline-variant">SPI</span>
+<span class="text-primary font-medium">3 units</span>
+</div>
+<div class="flex justify-between items-center p-2 bg-surface-container-low rounded">
+<span class="text-outline-variant">I2C</span>
+<span class="text-primary font-medium">3 units</span>
+</div>
+<div class="flex justify-between items-center p-2 bg-surface-container-low rounded">
+<span class="text-outline-variant">UART</span>
+<span class="text-primary font-medium">6 units</span>
+</div>
+<div class="flex justify-between items-center p-2 bg-surface-container-low rounded">
+<span class="text-outline-variant">Voltage</span>
+<span class="text-primary font-medium">3.3V logic</span>
+</div>
+</div>
+</div>
+<!-- Status Badge -->
+<div class="p-3 bg-surface-container-lowest rounded-lg border border-primary/10 flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-xs text-on-surface-variant font-medium">Controller Verified &amp; Available</span>
+</div>
+</div>
+<div class="mt-auto">
+<div class="p-4 bg-primary/5 rounded-xl border border-primary/10 space-y-2">
+<p class="text-xs text-primary font-bold uppercase tracking-tighter">Pro Tip</p>
+<p class="text-xs text-on-surface-variant leading-relaxed">Ensure high-speed SPI logging pins are not shared with the bootloader UART to avoid programming conflicts.</p>
+</div>
+</div>
+</aside>
+</main>
+<!-- Glass Overlay Contextual Info -->
+<div class="fixed bottom-6 left-[18rem] max-w-xs bg-surface-container-highest/80 backdrop-blur-xl border border-outline-variant/20 p-4 rounded-xl shadow-2xl z-40 hidden md:block">
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<div class="space-y-1">
+<p class="text-xs font-bold text-on-surface">AI Suggestion</p>
+<p class="text-[11px] text-on-surface-variant leading-normal">Based on "High-speed SPI logging", I recommend enabling DMA (Direct Memory Access) for the STM32F4 SPI3 peripheral.</p>
+</div>
+</div>
+</div>
+</body></html>
