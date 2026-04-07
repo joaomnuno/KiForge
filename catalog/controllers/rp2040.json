@@ -1,0 +1,9 @@
+{
+  "id": "rp2040",
+  "name": "RP2040",
+  "packageName": "QFN-56",
+  "voltage": "3.3V logic",
+  "notes": "Simple dual-core option for tooling, debug, and utility boards.",
+  "protocols": ["SPI", "I2C", "UART", "USB", "GPIO"],
+  "interfaces": ["SPI0", "SPI1", "I2C0", "I2C1", "UART0", "UART1"]
+}

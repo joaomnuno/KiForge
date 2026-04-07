@@ -2,10 +2,14 @@ import { render, screen } from "@testing-library/react";
 import { App } from "./App";
 
 describe("App", () => {
-  it("renders the projects route by default", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("renders the projects route by default", async () => {
     render(<App />);
     expect(
-      screen.getByRole("heading", { name: /my projects/i })
+      await screen.findByRole("heading", { name: /my projects/i })
     ).toBeInTheDocument();
   });
 });

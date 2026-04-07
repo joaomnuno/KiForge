@@ -4,15 +4,22 @@ KiForge is a Tauri v2 + React desktop application for planning hardware projects
 
 ## Current status
 
-This repository now contains the initial application scaffold:
+This repository now contains the scaffold plus the first persistence pass:
 
 - React + Vite + TypeScript frontend
-- Tauri v2 backend skeleton
-- Design-token driven desktop layout
-- Mocked project, component, and connection data
-- Linting, formatting, testing, and CI workflow stubs
+- Tauri v2 backend with filesystem-backed project commands
+- design-token driven desktop layout
+- persisted project CRUD wired into the frontend store
+- local JSON catalog under `catalog/controllers` and `catalog/components`
+- browser fallback storage for web preview
+- linting, formatting, testing, and CI workflow stubs
 
-The local environment used for scaffolding had `node` and `npm`, but not `cargo` or `rustc`, so dependency installation and native build verification were not run here.
+## Persistence model
+
+- Desktop mode uses Tauri commands backed by the resolved app data directory.
+- Project files are stored as `projects/<project-id>/project.json` under that app data root.
+- Web preview uses browser `localStorage` as a fallback so the app can run without the native shell.
+- Controller and component definitions now load from local JSON catalog files instead of `src/data/mockData.ts`.
 
 ## Scripts
 
@@ -31,8 +38,17 @@ The local environment used for scaffolding had `node` and `npm`, but not `cargo`
 3. Start the web app with `npm run dev`.
 4. After Rust is installed, start the desktop app with `npm run tauri:dev`.
 
+## Verification
+
+- `npm run typecheck`
+- `npm run test`
+- `npm run lint`
+- `npm run build`
+- `cargo test --manifest-path src-tauri/Cargo.toml`
+
 ## Guides
 
+- [Implementation next steps](./docs/next-steps.md)
 - [Windows setup](./docs/setup-windows.md)
 - [macOS setup](./docs/setup-macos.md)
 - [Linux setup](./docs/setup-linux.md)

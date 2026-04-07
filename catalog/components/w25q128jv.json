@@ -1,0 +1,10 @@
+{
+  "id": "w25q128jv",
+  "name": "W25Q128JV",
+  "categoryId": "memories",
+  "categoryLabel": "Memories",
+  "summary": "SPI NOR flash for high-rate logging and boot assets.",
+  "voltage": "2.7V - 3.6V",
+  "packageName": "SOIC-8 / WSON-8",
+  "supportedProtocols": ["SPI", "GPIO"]
+}

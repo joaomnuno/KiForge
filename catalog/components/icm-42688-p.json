@@ -1,0 +1,10 @@
+{
+  "id": "icm-42688-p",
+  "name": "ICM-42688-P",
+  "categoryId": "sensors",
+  "categoryLabel": "Sensors",
+  "summary": "6-axis IMU with low-noise accel and gyro readings.",
+  "voltage": "1.71V - 3.6V",
+  "packageName": "QFN-14",
+  "supportedProtocols": ["SPI", "I2C", "GPIO"]
+}

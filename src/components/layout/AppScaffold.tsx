@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { appNavigation } from "../../data/mockData";
+import { appNavigation } from "../../data/navigation";
 import { AppSidebar } from "./AppSidebar";
 import { TopToolbar } from "./TopToolbar";
 import { ProjectStrip } from "./ProjectStrip";
@@ -12,6 +12,8 @@ interface AppScaffoldProps {
     controller: string;
     status: string;
     voltageDomain: string;
+    onSave?: () => void;
+    isSaving?: boolean;
   };
   inspector?: ReactNode;
   children: ReactNode;

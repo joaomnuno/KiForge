@@ -1,0 +1,9 @@
+{
+  "id": "stm32h743zi",
+  "name": "STM32H743ZI",
+  "packageName": "LQFP-144",
+  "voltage": "3.3V logic",
+  "notes": "High-end controller for dense sensing, storage, and telemetry.",
+  "protocols": ["SPI", "I2C", "UART", "USB", "SWD", "GPIO"],
+  "interfaces": ["SPI1", "SPI2", "SPI3", "SPI4", "I2C1", "I2C2", "USART1"]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "tag-connect",
+  "name": "Tag-Connect SWD",
+  "categoryId": "debug",
+  "categoryLabel": "Debug",
+  "summary": "Compact SWD header footprint for debug and flashing.",
+  "voltage": "Board logic",
+  "packageName": "Connector footprint",
+  "supportedProtocols": ["SWD", "GPIO"]
+}

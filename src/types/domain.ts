@@ -1,13 +1,55 @@
-export type Protocol = "SPI" | "I2C" | "UART" | "USB" | "SWD" | "GPIO";
+export const protocols = ["SPI", "I2C", "UART", "USB", "SWD", "GPIO"] as const;
+export type Protocol = (typeof protocols)[number];
 
-export type ProjectStatus =
-  | "Draft"
-  | "Components Selected"
-  | "Connections Defined"
-  | "Pin Mapping Incomplete"
-  | "Ready to Generate"
-  | "Generated"
-  | "Has Conflicts";
+export const projectStatuses = [
+  "Draft",
+  "Components Selected",
+  "Connections Defined",
+  "Pin Mapping Incomplete",
+  "Ready to Generate",
+  "Generated",
+  "Has Conflicts"
+] as const;
+export type ProjectStatus = (typeof projectStatuses)[number];
+
+export const voltageDomains = ["3.3V", "5V", "Mixed", "Undecided"] as const;
+export type VoltageDomain = (typeof voltageDomains)[number];
+
+export const outputTargets = [
+  "Generate KiCad starter project",
+  "Generate components only",
+  "Generate starter sheet structure"
+] as const;
+export type OutputTarget = (typeof outputTargets)[number];
+
+export const componentStatuses = [
+  "Connected",
+  "Unconnected",
+  "Partially defined"
+] as const;
+export type ComponentStatus = (typeof componentStatuses)[number];
+
+export const signalAssignmentStatuses = [
+  "Valid",
+  "Needs confirmation",
+  "Conflict"
+] as const;
+export type SignalAssignmentStatus = (typeof signalAssignmentStatuses)[number];
+
+export const connectionStatuses = ["Valid", "Needs work"] as const;
+export type ConnectionStatus = (typeof connectionStatuses)[number];
+
+export const busModes = ["Dedicated", "Shared"] as const;
+export type BusMode = (typeof busModes)[number];
+
+export const issueSeverities = ["info", "warning", "error"] as const;
+export type IssueSeverity = (typeof issueSeverities)[number];
+
+export interface AppNavigationItem {
+  key: string;
+  label: string;
+  href: string;
+}
 
 export interface ProjectSummary {
   id: string;
@@ -15,12 +57,12 @@ export interface ProjectSummary {
   controller: string;
   deviceCount: number;
   interfaceCount: number;
-  lastEdited: string;
+  updatedAt: string;
   summary: string;
   status: ProjectStatus;
 }
 
-export interface ControllerOption {
+export interface ControllerCatalogEntry {
   id: string;
   name: string;
   packageName: string;
@@ -35,21 +77,22 @@ export interface LibraryCategory {
   label: string;
 }
 
-export interface LibraryEntry {
+export interface ComponentCatalogEntry {
   id: string;
   name: string;
   categoryId: string;
+  categoryLabel: string;
   summary: string;
   voltage: string;
   packageName: string;
   supportedProtocols: Protocol[];
 }
 
-export interface ProjectComponent {
+export interface ProjectComponentRecord {
   id: string;
+  catalogId: string;
   instanceName: string;
-  partName: string;
-  status: "Connected" | "Unconnected" | "Partially defined";
+  status: ComponentStatus;
   preferredProtocol?: Protocol;
 }
 
@@ -57,35 +100,66 @@ export interface SignalAssignment {
   signal: string;
   selectedPin: string;
   alternatePins: string[];
-  status: "Valid" | "Needs confirmation" | "Conflict";
+  status: SignalAssignmentStatus;
 }
 
-export interface ConnectionSummary {
+export interface ConnectionRecord {
   id: string;
-  name: string;
-  peerPart: string;
+  componentId: string;
   protocol: Protocol;
   controllerInterface: string;
   pins: string[];
-  busMode: "Dedicated" | "Shared";
+  busMode: BusMode;
   optionalSignals: string[];
-  status: "Valid" | "Needs work";
+  status: ConnectionStatus;
   assignments: SignalAssignment[];
 }
 
 export interface ValidationIssue {
   id: string;
-  severity: "info" | "warning" | "error";
+  severity: IssueSeverity;
   message: string;
 }
 
-export interface WorkspaceProject {
+export interface ProjectDocument {
   id: string;
   name: string;
-  controller: ControllerOption;
+  description: string;
+  controllerId: string;
   status: ProjectStatus;
-  voltageDomain: string;
-  components: ProjectComponent[];
-  connections: ConnectionSummary[];
+  voltageDomain: VoltageDomain;
+  template: string;
+  outputTarget: OutputTarget;
+  components: ProjectComponentRecord[];
+  connections: ConnectionRecord[];
   issues: ValidationIssue[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceProjectComponent extends ProjectComponentRecord {
+  part: ComponentCatalogEntry;
+  partName: string;
+  supportedProtocols: Protocol[];
+}
+
+export interface WorkspaceConnection extends ConnectionRecord {
+  name: string;
+  peerPart: string;
+}
+
+export interface WorkspaceProject
+  extends Omit<ProjectDocument, "controllerId" | "components" | "connections"> {
+  controller: ControllerCatalogEntry;
+  components: WorkspaceProjectComponent[];
+  connections: WorkspaceConnection[];
+}
+
+export interface CreateProjectInput {
+  name: string;
+  description: string;
+  controllerId: string;
+  template: string;
+  voltageDomain: VoltageDomain;
+  outputTarget: OutputTarget;
 }

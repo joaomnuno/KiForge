@@ -1,8 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AppScaffold } from "../../components/layout/AppScaffold";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { formatTimestamp } from "../../lib/date-format";
 import { useWorkspaceStore } from "./project-store";
 
 const filterPills = [
@@ -14,7 +15,45 @@ const filterPills = [
 ] as const;
 
 export function ProjectsPage() {
+  const navigate = useNavigate();
   const projects = useWorkspaceStore((state) => state.projects);
+  const isLoading = useWorkspaceStore((state) => state.isLoading);
+  const isSaving = useWorkspaceStore((state) => state.isSaving);
+  const errorMessage = useWorkspaceStore((state) => state.errorMessage);
+  const openProject = useWorkspaceStore((state) => state.openProject);
+  const renameProject = useWorkspaceStore((state) => state.renameProject);
+  const duplicateProject = useWorkspaceStore((state) => state.duplicateProject);
+  const deleteProject = useWorkspaceStore((state) => state.deleteProject);
+
+  async function handleOpenProject(projectId: string) {
+    await openProject(projectId);
+    if (useWorkspaceStore.getState().activeProjectId === projectId) {
+      navigate("/workspace/components");
+    }
+  }
+
+  async function handleRenameProject(projectId: string, projectName: string) {
+    const nextName = window.prompt("Rename project", projectName);
+    if (!nextName) {
+      return;
+    }
+
+    await renameProject(projectId, nextName);
+  }
+
+  async function handleDuplicateProject(projectId: string, projectName: string) {
+    const nextName = window.prompt("Duplicate project as", `${projectName} Copy`);
+    await duplicateProject(projectId, nextName ?? undefined);
+  }
+
+  async function handleDeleteProject(projectId: string, projectName: string) {
+    const confirmed = window.confirm(`Delete "${projectName}"?`);
+    if (!confirmed) {
+      return;
+    }
+
+    await deleteProject(projectId);
+  }
 
   return (
     <AppScaffold
@@ -38,7 +77,7 @@ export function ProjectsPage() {
           <Panel
             eyebrow="Starter templates"
             title="Suggested first-run projects"
-            description="Keep these templates local and editable. They should become seeded JSON templates later."
+            description="Templates are still static, but the project list now loads from persisted local data."
           >
             <ul className="list-reset stack-sm">
               <li className="inspector-row">
@@ -72,6 +111,12 @@ export function ProjectsPage() {
           </Link>
         </section>
 
+        {errorMessage ? (
+          <Panel>
+            <p className="form-note">{errorMessage}</p>
+          </Panel>
+        ) : null}
+
         <div className="filter-row">
           {filterPills.map((pill, index) => (
             <button
@@ -84,49 +129,94 @@ export function ProjectsPage() {
           ))}
         </div>
 
-        <section className="cards-grid">
-          {projects.map((project) => (
-            <article key={project.id} className="project-card">
-              <div className="project-card__header">
-                <div>
-                  <p className="eyebrow">Project</p>
-                  <h2>{project.name}</h2>
-                </div>
-                <StatusBadge label={project.status} />
-              </div>
+        {isLoading && projects.length === 0 ? (
+          <Panel title="Loading projects" description="Reading local project files now." />
+        ) : null}
 
-              <p className="project-card__summary">{project.summary}</p>
+        {!isLoading && projects.length === 0 ? (
+          <Panel
+            title="No projects yet"
+            description="Create your first hardware starter project, choose a controller, and begin defining the device inventory."
+          >
+            <div className="button-group">
+              <Link className="button button--primary" to="/projects/new">
+                Create New Project
+              </Link>
+            </div>
+          </Panel>
+        ) : null}
 
-              <dl className="stats-grid">
-                <div>
-                  <dt>Controller</dt>
-                  <dd>{project.controller}</dd>
+        {projects.length > 0 ? (
+          <section className="cards-grid">
+            {projects.map((project) => (
+              <article key={project.id} className="project-card">
+                <div className="project-card__header">
+                  <div>
+                    <p className="eyebrow">Project</p>
+                    <h2>{project.name}</h2>
+                  </div>
+                  <StatusBadge label={project.status} />
                 </div>
-                <div>
-                  <dt>Devices</dt>
-                  <dd>{project.deviceCount}</dd>
-                </div>
-                <div>
-                  <dt>Interfaces</dt>
-                  <dd>{project.interfaceCount}</dd>
-                </div>
-                <div>
-                  <dt>Last edited</dt>
-                  <dd>{project.lastEdited}</dd>
-                </div>
-              </dl>
 
-              <div className="project-card__actions">
-                <Link className="button button--secondary" to="/workspace/components">
-                  Open
-                </Link>
-                <Button variant="ghost" type="button">
-                  Duplicate
-                </Button>
-              </div>
-            </article>
-          ))}
-        </section>
+                <p className="project-card__summary">{project.summary}</p>
+
+                <dl className="stats-grid">
+                  <div>
+                    <dt>Controller</dt>
+                    <dd>{project.controller}</dd>
+                  </div>
+                  <div>
+                    <dt>Devices</dt>
+                    <dd>{project.deviceCount}</dd>
+                  </div>
+                  <div>
+                    <dt>Interfaces</dt>
+                    <dd>{project.interfaceCount}</dd>
+                  </div>
+                  <div>
+                    <dt>Updated</dt>
+                    <dd>{formatTimestamp(project.updatedAt)}</dd>
+                  </div>
+                </dl>
+
+                <div className="project-card__actions">
+                  <Button
+                    disabled={isSaving}
+                    onClick={() => void handleOpenProject(project.id)}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Open
+                  </Button>
+                  <Button
+                    disabled={isSaving}
+                    onClick={() => void handleDuplicateProject(project.id, project.name)}
+                    type="button"
+                    variant="ghost"
+                  >
+                    Duplicate
+                  </Button>
+                  <Button
+                    disabled={isSaving}
+                    onClick={() => void handleRenameProject(project.id, project.name)}
+                    type="button"
+                    variant="ghost"
+                  >
+                    Rename
+                  </Button>
+                  <Button
+                    disabled={isSaving}
+                    onClick={() => void handleDeleteProject(project.id, project.name)}
+                    type="button"
+                    variant="ghost"
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </section>
+        ) : null}
       </div>
     </AppScaffold>
   );

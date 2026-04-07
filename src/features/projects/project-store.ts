@@ -1,29 +1,341 @@
 import { create } from "zustand";
-import { currentWorkspace, projectSummaries } from "../../data/mockData";
-import type { ProjectSummary, WorkspaceProject } from "../../types/domain";
+import { findComponent } from "../catalog/catalog";
+import type {
+  CreateProjectInput,
+  ProjectDocument,
+  ProjectSummary,
+  ProjectStatus,
+  WorkspaceProject
+} from "../../types/domain";
+import { resolveProjectDocument, sortProjects, toProjectSummary } from "./project-mappers";
+import { getProjectService } from "./project-service";
 
-interface WorkspaceState {
+const ACTIVE_PROJECT_STORAGE_KEY = "kiforge.active-project-id.v1";
+
+interface WorkspaceSnapshot {
   projects: ProjectSummary[];
-  currentProject: WorkspaceProject;
-  activeProjectId: string;
-  selectProject: (projectId: string) => void;
+  activeProjectId: string | null;
+  currentProjectDocument: ProjectDocument | null;
+  currentProject: WorkspaceProject | null;
 }
 
-export const useWorkspaceStore = create<WorkspaceState>((set) => ({
-  projects: projectSummaries,
-  currentProject: currentWorkspace,
-  activeProjectId: currentWorkspace.id,
-  selectProject: (projectId) =>
-    set((state) => {
-      const nextProject =
-        state.projects.find((project) => project.id === projectId)?.id ===
-        currentWorkspace.id
-          ? currentWorkspace
-          : currentWorkspace;
+interface WorkspaceState extends WorkspaceSnapshot {
+  isInitialized: boolean;
+  isLoading: boolean;
+  isSaving: boolean;
+  errorMessage: string | null;
+  initialize: () => Promise<void>;
+  openProject: (projectId: string) => Promise<void>;
+  createProject: (input: CreateProjectInput) => Promise<WorkspaceProject | null>;
+  saveCurrentProject: () => Promise<void>;
+  renameProject: (projectId: string, name: string) => Promise<void>;
+  duplicateProject: (projectId: string, name?: string) => Promise<WorkspaceProject | null>;
+  deleteProject: (projectId: string) => Promise<void>;
+  addComponentToCurrentProject: (catalogId: string) => Promise<void>;
+  clearError: () => void;
+}
 
-      return {
-        activeProjectId: projectId,
-        currentProject: nextProject
-      };
-    })
+function slugify(value: string) {
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  return slug || "item";
+}
+
+function toErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "An unexpected persistence error occurred.";
+}
+
+function getStorage() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage;
+}
+
+function readActiveProjectId() {
+  return getStorage()?.getItem(ACTIVE_PROJECT_STORAGE_KEY) ?? null;
+}
+
+function writeActiveProjectId(projectId: string | null) {
+  const storage = getStorage();
+  if (!storage) {
+    return;
+  }
+
+  if (projectId) {
+    storage.setItem(ACTIVE_PROJECT_STORAGE_KEY, projectId);
+    return;
+  }
+
+  storage.removeItem(ACTIVE_PROJECT_STORAGE_KEY);
+}
+
+function buildWorkspaceSnapshot(
+  projectDocuments: ProjectDocument[],
+  preferredProjectId?: string | null
+): WorkspaceSnapshot {
+  const sortedProjects = sortProjects(projectDocuments);
+  const requestedProjectId = preferredProjectId ?? readActiveProjectId();
+  const resolvedActiveProjectId =
+    requestedProjectId && sortedProjects.some((project) => project.id === requestedProjectId)
+      ? requestedProjectId
+      : sortedProjects[0]?.id ?? null;
+
+  const currentProjectDocument =
+    sortedProjects.find((project) => project.id === resolvedActiveProjectId) ?? null;
+
+  writeActiveProjectId(resolvedActiveProjectId);
+
+  return {
+    projects: sortedProjects.map(toProjectSummary),
+    activeProjectId: resolvedActiveProjectId,
+    currentProjectDocument,
+    currentProject: currentProjectDocument
+      ? resolveProjectDocument(currentProjectDocument)
+      : null
+  };
+}
+
+function nextProjectStatus(project: ProjectDocument): ProjectStatus {
+  if (project.connections.length > 0) {
+    return project.status;
+  }
+
+  if (project.components.length > 0) {
+    return "Components Selected";
+  }
+
+  return "Draft";
+}
+
+function makeUniqueItemId(existingIds: string[], seed: string) {
+  const baseId = slugify(seed);
+  let candidateId = baseId;
+  let duplicateIndex = 2;
+
+  while (existingIds.includes(candidateId)) {
+    candidateId = `${baseId}-${duplicateIndex}`;
+    duplicateIndex += 1;
+  }
+
+  return candidateId;
+}
+
+function makeUniqueInstanceName(existingNames: string[], seed: string) {
+  if (!existingNames.includes(seed)) {
+    return seed;
+  }
+
+  let duplicateIndex = 2;
+  let candidateName = `${seed} ${duplicateIndex}`;
+
+  while (existingNames.includes(candidateName)) {
+    duplicateIndex += 1;
+    candidateName = `${seed} ${duplicateIndex}`;
+  }
+
+  return candidateName;
+}
+
+async function refreshWorkspace(
+  setState: (partial: Partial<WorkspaceState>) => void,
+  preferredProjectId?: string | null
+) {
+  const projectDocuments = await getProjectService().loadProjects();
+  const snapshot = buildWorkspaceSnapshot(projectDocuments, preferredProjectId);
+
+  setState({
+    ...snapshot,
+    isInitialized: true,
+    isLoading: false,
+    isSaving: false,
+    errorMessage: null
+  });
+
+  return snapshot.currentProject;
+}
+
+export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
+  projects: [],
+  activeProjectId: null,
+  currentProjectDocument: null,
+  currentProject: null,
+  isInitialized: false,
+  isLoading: false,
+  isSaving: false,
+  errorMessage: null,
+
+  async initialize() {
+    if (get().isLoading) {
+      return;
+    }
+
+    set({ isLoading: true, errorMessage: null });
+
+    try {
+      await refreshWorkspace(set);
+    } catch (error) {
+      set({
+        isInitialized: true,
+        isLoading: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  async openProject(projectId) {
+    set({ isLoading: true, errorMessage: null });
+
+    try {
+      await refreshWorkspace(set, projectId);
+    } catch (error) {
+      set({
+        isLoading: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  async createProject(input) {
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      const project = await getProjectService().createProject(input);
+      return await refreshWorkspace(set, project.id);
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+      return null;
+    }
+  },
+
+  async saveCurrentProject() {
+    const currentProjectDocument = get().currentProjectDocument;
+    if (!currentProjectDocument) {
+      return;
+    }
+
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      const project = await getProjectService().saveProject(currentProjectDocument);
+      await refreshWorkspace(set, project.id);
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  async renameProject(projectId, name) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      return;
+    }
+
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      const project = await getProjectService().renameProject(projectId, trimmedName);
+      await refreshWorkspace(set, project.id);
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  async duplicateProject(projectId, name) {
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      const project = await getProjectService().duplicateProject(projectId, name);
+      return await refreshWorkspace(set, project.id);
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+      return null;
+    }
+  },
+
+  async deleteProject(projectId) {
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      await getProjectService().deleteProject(projectId);
+      const preferredProjectId =
+        get().activeProjectId === projectId ? null : get().activeProjectId;
+      await refreshWorkspace(set, preferredProjectId);
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  async addComponentToCurrentProject(catalogId) {
+    const currentProjectDocument = get().currentProjectDocument;
+    if (!currentProjectDocument) {
+      return;
+    }
+
+    const component = findComponent(catalogId);
+    if (!component) {
+      set({ errorMessage: `Component "${catalogId}" was not found in the catalog.` });
+      return;
+    }
+
+    const nextComponent = {
+      id: makeUniqueItemId(
+        currentProjectDocument.components.map((candidate) => candidate.id),
+        component.id
+      ),
+      catalogId: component.id,
+      instanceName: makeUniqueInstanceName(
+        currentProjectDocument.components.map((candidate) => candidate.instanceName),
+        component.name
+      ),
+      status: "Unconnected" as const,
+      preferredProtocol: component.supportedProtocols[0]
+    };
+
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      const project = await getProjectService().saveProject({
+        ...currentProjectDocument,
+        components: [...currentProjectDocument.components, nextComponent],
+        status: nextProjectStatus({
+          ...currentProjectDocument,
+          components: [...currentProjectDocument.components, nextComponent]
+        })
+      });
+
+      await refreshWorkspace(set, project.id);
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  clearError() {
+    set({ errorMessage: null });
+  }
 }));

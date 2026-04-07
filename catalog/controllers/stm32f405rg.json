@@ -1,0 +1,9 @@
+{
+  "id": "stm32f405rg",
+  "name": "STM32F405RG",
+  "packageName": "LQFP-64",
+  "voltage": "3.3V logic",
+  "notes": "Good fit for medium-complexity sensor and logging boards.",
+  "protocols": ["SPI", "I2C", "UART", "USB", "SWD", "GPIO"],
+  "interfaces": ["SPI1", "SPI2", "SPI3", "I2C1", "I2C2", "USART1", "USART2"]
+}

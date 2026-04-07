@@ -3,8 +3,11 @@ import { ProjectsPage } from "../features/projects/ProjectsPage";
 import { NewProjectPage } from "../features/projects/NewProjectPage";
 import { ComponentsPage } from "../features/components/ComponentsPage";
 import { ConnectionsPage } from "../features/connections/ConnectionsPage";
+import { useProjectBootstrap } from "../features/projects/use-project-bootstrap";
 
 export function App() {
+  useProjectBootstrap();
+
   return (
     <HashRouter>
       <Routes>

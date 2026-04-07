@@ -1,40 +1,32 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useNavigate } from "react-router-dom";
 import { AppScaffold } from "../../components/layout/AppScaffold";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
-import { controllerOptions } from "../../data/mockData";
-
-const newProjectSchema = z.object({
-  name: z.string().min(3, "Use at least 3 characters."),
-  description: z.string().min(8, "Add a short context note."),
-  controllerId: z.string().min(1, "Choose a target controller."),
-  template: z.string().min(1),
-  voltageDomain: z.enum(["3.3V", "5V", "Mixed", "Undecided"]),
-  outputTarget: z.enum([
-    "Generate KiCad starter project",
-    "Generate components only",
-    "Generate starter sheet structure"
-  ])
-});
-
-type NewProjectFormValues = z.infer<typeof newProjectSchema>;
+import { catalog } from "../catalog/catalog";
+import { getInitialControllerId } from "./project-mappers";
+import { createProjectInputSchema } from "./project-schemas";
+import { useWorkspaceStore } from "./project-store";
+import type { CreateProjectInput } from "../../types/domain";
 
 export function NewProjectPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
+  const createProject = useWorkspaceStore((state) => state.createProject);
+  const isSaving = useWorkspaceStore((state) => state.isSaving);
+  const errorMessage = useWorkspaceStore((state) => state.errorMessage);
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors }
-  } = useForm<NewProjectFormValues>({
-    resolver: zodResolver(newProjectSchema),
+  } = useForm<CreateProjectInput>({
+    resolver: zodResolver(createProjectInputSchema),
     defaultValues: {
       name: "Flight Controller Rev B",
       description: "Next-gen drone controller with high-speed logging and sensing.",
-      controllerId: controllerOptions[0].id,
+      controllerId: getInitialControllerId(),
       template: "Blank project",
       voltageDomain: "3.3V",
       outputTarget: "Generate KiCad starter project"
@@ -45,11 +37,17 @@ export function NewProjectPage() {
 
   const selectedController = useMemo(
     () =>
-      controllerOptions.find(
-        (controller) => controller.id === selectedControllerId
-      ) ?? controllerOptions[0],
+      catalog.controllers.find((controller) => controller.id === selectedControllerId) ??
+      catalog.controllers[0],
     [selectedControllerId]
   );
+
+  async function onSubmit(values: CreateProjectInput) {
+    const project = await createProject(values);
+    if (project) {
+      navigate("/workspace/components");
+    }
+  }
 
   return (
     <AppScaffold
@@ -57,34 +55,36 @@ export function NewProjectPage() {
       searchPlaceholder="Search controllers, templates, or recent projects..."
       inspector={
         <>
-          <Panel
-            eyebrow="Selected controller"
-            title={selectedController.name}
-            description={selectedController.notes}
-          >
-            <dl className="fact-grid">
-              <div>
-                <dt>Package</dt>
-                <dd>{selectedController.packageName}</dd>
-              </div>
-              <div>
-                <dt>Voltage</dt>
-                <dd>{selectedController.voltage}</dd>
-              </div>
-              <div>
-                <dt>Interfaces</dt>
-                <dd>{selectedController.interfaces.length}</dd>
-              </div>
-            </dl>
+          {selectedController ? (
+            <Panel
+              eyebrow="Selected controller"
+              title={selectedController.name}
+              description={selectedController.notes}
+            >
+              <dl className="fact-grid">
+                <div>
+                  <dt>Package</dt>
+                  <dd>{selectedController.packageName}</dd>
+                </div>
+                <div>
+                  <dt>Voltage</dt>
+                  <dd>{selectedController.voltage}</dd>
+                </div>
+                <div>
+                  <dt>Interfaces</dt>
+                  <dd>{selectedController.interfaces.length}</dd>
+                </div>
+              </dl>
 
-            <div className="chip-row">
-              {selectedController.protocols.map((protocol) => (
-                <span key={protocol} className="chip">
-                  {protocol}
-                </span>
-              ))}
-            </div>
-          </Panel>
+              <div className="chip-row">
+                {selectedController.protocols.map((protocol) => (
+                  <span key={protocol} className="chip">
+                    {protocol}
+                  </span>
+                ))}
+              </div>
+            </Panel>
+          ) : null}
 
           <Panel
             eyebrow="Setup notes"
@@ -98,7 +98,7 @@ export function NewProjectPage() {
               </li>
               <li className="inspector-row">
                 <strong>Template</strong>
-                <span>Should remain optional and local for the first release.</span>
+                <span>Stays optional and local in this persistence pass.</span>
               </li>
               <li className="inspector-row">
                 <strong>Output target</strong>
@@ -121,10 +121,7 @@ export function NewProjectPage() {
         </section>
 
         <Panel>
-          <form
-            className="form-grid"
-            onSubmit={handleSubmit(() => setSubmitted(true))}
-          >
+          <form className="form-grid" onSubmit={handleSubmit(onSubmit)}>
             <label className="field">
               <span>Project name</span>
               <input {...register("name")} className="field__control" />
@@ -148,7 +145,7 @@ export function NewProjectPage() {
             <label className="field">
               <span>Target controller</span>
               <select {...register("controllerId")} className="field__control">
-                {controllerOptions.map((controller) => (
+                {catalog.controllers.map((controller) => (
                   <option key={controller.id} value={controller.id}>
                     {controller.name}
                   </option>
@@ -185,19 +182,22 @@ export function NewProjectPage() {
               </select>
             </label>
 
+            {errorMessage ? (
+              <p className="form-note field--full">{errorMessage}</p>
+            ) : null}
+
             <div className="form-actions field--full">
-              <Button type="button" variant="ghost">
+              <Button
+                onClick={() => navigate("/projects")}
+                type="button"
+                variant="ghost"
+              >
                 Cancel
               </Button>
-              <Button type="submit">Create project</Button>
+              <Button disabled={isSaving} type="submit">
+                {isSaving ? "Creating..." : "Create project"}
+              </Button>
             </div>
-
-            {submitted ? (
-              <p className="form-note">
-                Form validation is wired. Project creation is still mocked until the
-                Rust persistence commands are connected.
-              </p>
-            ) : null}
           </form>
         </Panel>
       </div>

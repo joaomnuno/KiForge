@@ -1,0 +1,10 @@
+{
+  "id": "ch340k",
+  "name": "CH340K",
+  "categoryId": "communications",
+  "categoryLabel": "Communications",
+  "summary": "USB to UART bridge for bring-up, flashing, and diagnostics.",
+  "voltage": "3.3V / 5V",
+  "packageName": "MSOP-10",
+  "supportedProtocols": ["USB", "UART", "GPIO"]
+}
