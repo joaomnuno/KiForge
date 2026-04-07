@@ -6,5 +6,14 @@
   "summary": "USB to UART bridge for bring-up, flashing, and diagnostics.",
   "voltage": "3.3V / 5V",
   "packageName": "MSOP-10",
-  "supportedProtocols": ["USB", "UART", "GPIO"]
+  "supportedProtocols": ["USB", "UART", "GPIO"],
+  "connectionOptions": [
+    {
+      "protocol": "UART",
+      "notes": "The bridge only needs a UART pair to the controller for the MVP planner.",
+      "optionalSignals": [
+        { "name": "DTR", "source": "gpio", "sharedBehavior": "unique" }
+      ]
+    }
+  ]
 }

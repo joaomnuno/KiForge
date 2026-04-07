@@ -6,5 +6,15 @@
   "summary": "SPI NOR flash for high-rate logging and boot assets.",
   "voltage": "2.7V - 3.6V",
   "packageName": "SOIC-8 / WSON-8",
-  "supportedProtocols": ["SPI", "GPIO"]
+  "supportedProtocols": ["SPI", "GPIO"],
+  "connectionOptions": [
+    {
+      "protocol": "SPI",
+      "notes": "Flash memory can sit on a dedicated SPI bus or explicitly join a shared SPI bus.",
+      "optionalSignals": [
+        { "name": "HOLD", "source": "gpio", "sharedBehavior": "unique" },
+        { "name": "WP", "source": "gpio", "sharedBehavior": "unique" }
+      ]
+    }
+  ]
 }

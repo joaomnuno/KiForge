@@ -1,12 +1,34 @@
 import { z } from "zod";
 import {
+  plannerProtocols,
   protocols,
   type ComponentCatalogEntry,
+  type ComponentConnectionOption,
   type ControllerCatalogEntry,
   type LibraryCategory
 } from "../../types/domain";
 
 const protocolSchema = z.enum(protocols);
+const plannerProtocolSchema = z.enum(plannerProtocols);
+const signalPinSchema = z.object({
+  signal: z.string().min(1),
+  pins: z.array(z.string().min(1)).min(1)
+});
+const controllerInterfaceSchema = z.object({
+  name: z.string().min(1),
+  protocol: plannerProtocolSchema,
+  signalPins: z.array(signalPinSchema).min(1)
+});
+const componentConnectionSignalSchema = z.object({
+  name: z.string().min(1),
+  source: z.enum(["interface", "gpio"]),
+  sharedBehavior: z.enum(["reuse-on-shared", "unique"])
+});
+const componentConnectionOptionSchema = z.object({
+  protocol: plannerProtocolSchema,
+  notes: z.string().min(1),
+  optionalSignals: z.array(componentConnectionSignalSchema)
+});
 
 const controllerSchema = z.object({
   id: z.string().min(1),
@@ -15,7 +37,8 @@ const controllerSchema = z.object({
   voltage: z.string().min(1),
   notes: z.string().min(1),
   protocols: z.array(protocolSchema).min(1),
-  interfaces: z.array(z.string().min(1)).min(1)
+  interfaces: z.array(controllerInterfaceSchema).min(1),
+  gpioPins: z.array(z.string().min(1)).min(1)
 });
 
 const componentSchema = z.object({
@@ -26,7 +49,8 @@ const componentSchema = z.object({
   summary: z.string().min(1),
   voltage: z.string().min(1),
   packageName: z.string().min(1),
-  supportedProtocols: z.array(protocolSchema).min(1)
+  supportedProtocols: z.array(protocolSchema).min(1),
+  connectionOptions: z.array(componentConnectionOptionSchema)
 });
 
 function parseCatalogModules<T extends { id: string; name: string }>(
@@ -106,4 +130,18 @@ export function findController(controllerId: string) {
 
 export function findComponent(componentId: string) {
   return catalog.componentsById.get(componentId);
+}
+
+export function findControllerInterface(
+  controller: ControllerCatalogEntry,
+  interfaceName: string
+) {
+  return controller.interfaces.find((controllerInterface) => controllerInterface.name === interfaceName);
+}
+
+export function findComponentConnectionOption(
+  component: ComponentCatalogEntry,
+  protocol: ComponentConnectionOption["protocol"]
+) {
+  return component.connectionOptions.find((option) => option.protocol === protocol);
 }

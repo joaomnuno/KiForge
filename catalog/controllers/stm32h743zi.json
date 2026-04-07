@@ -5,5 +5,102 @@
   "voltage": "3.3V logic",
   "notes": "High-end controller for dense sensing, storage, and telemetry.",
   "protocols": ["SPI", "I2C", "UART", "USB", "SWD", "GPIO"],
-  "interfaces": ["SPI1", "SPI2", "SPI3", "SPI4", "I2C1", "I2C2", "USART1"]
+  "interfaces": [
+    {
+      "name": "SPI1",
+      "protocol": "SPI",
+      "signalPins": [
+        { "signal": "SCK", "pins": ["PA5"] },
+        { "signal": "MISO", "pins": ["PA6"] },
+        { "signal": "MOSI", "pins": ["PA7"] }
+      ]
+    },
+    {
+      "name": "SPI2",
+      "protocol": "SPI",
+      "signalPins": [
+        { "signal": "SCK", "pins": ["PB13"] },
+        { "signal": "MISO", "pins": ["PB14"] },
+        { "signal": "MOSI", "pins": ["PB15"] }
+      ]
+    },
+    {
+      "name": "SPI3",
+      "protocol": "SPI",
+      "signalPins": [
+        { "signal": "SCK", "pins": ["PC10"] },
+        { "signal": "MISO", "pins": ["PC11"] },
+        { "signal": "MOSI", "pins": ["PC12"] }
+      ]
+    },
+    {
+      "name": "SPI4",
+      "protocol": "SPI",
+      "signalPins": [
+        { "signal": "SCK", "pins": ["PE12"] },
+        { "signal": "MISO", "pins": ["PE13"] },
+        { "signal": "MOSI", "pins": ["PE14"] }
+      ]
+    },
+    {
+      "name": "I2C1",
+      "protocol": "I2C",
+      "signalPins": [
+        { "signal": "SCL", "pins": ["PB8"] },
+        { "signal": "SDA", "pins": ["PB9"] }
+      ]
+    },
+    {
+      "name": "I2C2",
+      "protocol": "I2C",
+      "signalPins": [
+        { "signal": "SCL", "pins": ["PF1"] },
+        { "signal": "SDA", "pins": ["PF0"] }
+      ]
+    },
+    {
+      "name": "USART1",
+      "protocol": "UART",
+      "signalPins": [
+        { "signal": "TX", "pins": ["PA9"] },
+        { "signal": "RX", "pins": ["PA10"] }
+      ]
+    },
+    {
+      "name": "USB_FS",
+      "protocol": "USB",
+      "signalPins": [
+        { "signal": "D+", "pins": ["PA12"] },
+        { "signal": "D-", "pins": ["PA11"] }
+      ]
+    },
+    {
+      "name": "SWD",
+      "protocol": "SWD",
+      "signalPins": [
+        { "signal": "SWDIO", "pins": ["PA13"] },
+        { "signal": "SWCLK", "pins": ["PA14"] }
+      ]
+    }
+  ],
+  "gpioPins": [
+    "PB0",
+    "PB1",
+    "PC4",
+    "PC5",
+    "PC6",
+    "PC7",
+    "PE0",
+    "PE1",
+    "PF2",
+    "PF3",
+    "PG6",
+    "PG7",
+    "PA0",
+    "PA1",
+    "PD2",
+    "PG14",
+    "PG15",
+    "PA8"
+  ]
 }

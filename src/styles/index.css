@@ -462,7 +462,8 @@ button {
 }
 
 .inspector-row,
-.component-list-item {
+.component-list-item,
+.availability-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -471,12 +472,14 @@ button {
 
 .inspector-row strong,
 .component-list-item strong,
+.availability-item strong,
 .device-list__item strong {
   display: block;
 }
 
 .inspector-row span,
 .component-list-item span,
+.availability-item span,
 .device-list__item span {
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -630,6 +633,80 @@ button {
   color: var(--text-muted);
 }
 
+.planner-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.planner-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.planner-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.planner-note {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.planner-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.planner-row {
+  display: grid;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(53, 53, 52, 0.42);
+}
+
+.planner-row__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.planner-row__meta span {
+  color: var(--text-subtle);
+  font-size: 0.82rem;
+}
+
+.planner-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(53, 53, 52, 0.42);
+}
+
+.planner-summary dt {
+  margin: 0 0 4px;
+  color: var(--text-subtle);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.planner-summary dd {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+
 @media (max-width: 1200px) {
   .workspace--with-inspector {
     grid-template-columns: 1fr;
@@ -652,7 +729,9 @@ button {
 
   .components-layout,
   .connections-layout,
-  .form-grid {
+  .form-grid,
+  .planner-form-grid,
+  .planner-summary {
     grid-template-columns: 1fr;
   }
 
@@ -684,7 +763,8 @@ button {
   }
 
   .stats-grid,
-  .fact-grid {
+  .fact-grid,
+  .planner-row {
     grid-template-columns: 1fr;
   }
 }

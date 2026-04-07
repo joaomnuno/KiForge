@@ -1,10 +1,11 @@
 import { create } from "zustand";
+import { applyDerivedProjectState } from "../connections/planner";
 import { findComponent } from "../catalog/catalog";
 import type {
+  ConnectionRecord,
   CreateProjectInput,
   ProjectDocument,
   ProjectSummary,
-  ProjectStatus,
   WorkspaceProject
 } from "../../types/domain";
 import { resolveProjectDocument, sortProjects, toProjectSummary } from "./project-mappers";
@@ -32,6 +33,8 @@ interface WorkspaceState extends WorkspaceSnapshot {
   duplicateProject: (projectId: string, name?: string) => Promise<WorkspaceProject | null>;
   deleteProject: (projectId: string) => Promise<void>;
   addComponentToCurrentProject: (catalogId: string) => Promise<void>;
+  saveConnectionToCurrentProject: (connection: ConnectionRecord) => Promise<void>;
+  deleteConnectionFromCurrentProject: (connectionId: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -82,7 +85,7 @@ function buildWorkspaceSnapshot(
   projectDocuments: ProjectDocument[],
   preferredProjectId?: string | null
 ): WorkspaceSnapshot {
-  const sortedProjects = sortProjects(projectDocuments);
+  const sortedProjects = sortProjects(projectDocuments.map(applyDerivedProjectState));
   const requestedProjectId = preferredProjectId ?? readActiveProjectId();
   const resolvedActiveProjectId =
     requestedProjectId && sortedProjects.some((project) => project.id === requestedProjectId)
@@ -102,18 +105,6 @@ function buildWorkspaceSnapshot(
       ? resolveProjectDocument(currentProjectDocument)
       : null
   };
-}
-
-function nextProjectStatus(project: ProjectDocument): ProjectStatus {
-  if (project.connections.length > 0) {
-    return project.status;
-  }
-
-  if (project.components.length > 0) {
-    return "Components Selected";
-  }
-
-  return "Draft";
 }
 
 function makeUniqueItemId(existingIds: string[], seed: string) {
@@ -161,6 +152,16 @@ async function refreshWorkspace(
   });
 
   return snapshot.currentProject;
+}
+
+async function persistProjectDocument(
+  setState: (partial: Partial<WorkspaceState>) => void,
+  project: ProjectDocument
+) {
+  const savedProject = await getProjectService().saveProject(
+    applyDerivedProjectState(project)
+  );
+  return refreshWorkspace(setState, savedProject.id);
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -228,8 +229,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({ isSaving: true, errorMessage: null });
 
     try {
-      const project = await getProjectService().saveProject(currentProjectDocument);
-      await refreshWorkspace(set, project.id);
+      await persistProjectDocument(set, currentProjectDocument);
     } catch (error) {
       set({
         isSaving: false,
@@ -317,16 +317,62 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({ isSaving: true, errorMessage: null });
 
     try {
-      const project = await getProjectService().saveProject({
+      await persistProjectDocument(set, {
         ...currentProjectDocument,
-        components: [...currentProjectDocument.components, nextComponent],
-        status: nextProjectStatus({
-          ...currentProjectDocument,
-          components: [...currentProjectDocument.components, nextComponent]
-        })
+        components: [...currentProjectDocument.components, nextComponent]
       });
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
 
-      await refreshWorkspace(set, project.id);
+  async saveConnectionToCurrentProject(connection) {
+    const currentProjectDocument = get().currentProjectDocument;
+    if (!currentProjectDocument) {
+      return;
+    }
+
+    const nextConnections = currentProjectDocument.connections.some(
+      (candidate) => candidate.id === connection.id
+    )
+      ? currentProjectDocument.connections.map((candidate) =>
+          candidate.id === connection.id ? connection : candidate
+        )
+      : [...currentProjectDocument.connections, connection];
+
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      await persistProjectDocument(set, {
+        ...currentProjectDocument,
+        connections: nextConnections
+      });
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  async deleteConnectionFromCurrentProject(connectionId) {
+    const currentProjectDocument = get().currentProjectDocument;
+    if (!currentProjectDocument) {
+      return;
+    }
+
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      await persistProjectDocument(set, {
+        ...currentProjectDocument,
+        connections: currentProjectDocument.connections.filter(
+          (connection) => connection.id !== connectionId
+        )
+      });
     } catch (error) {
       set({
         isSaving: false,

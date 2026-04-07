@@ -1,6 +1,9 @@
 export const protocols = ["SPI", "I2C", "UART", "USB", "SWD", "GPIO"] as const;
 export type Protocol = (typeof protocols)[number];
 
+export const plannerProtocols = ["SPI", "I2C", "UART", "USB", "SWD"] as const;
+export type PlannerProtocol = (typeof plannerProtocols)[number];
+
 export const projectStatuses = [
   "Draft",
   "Components Selected",
@@ -62,6 +65,17 @@ export interface ProjectSummary {
   status: ProjectStatus;
 }
 
+export interface SignalPinOption {
+  signal: string;
+  pins: string[];
+}
+
+export interface ControllerInterfaceDefinition {
+  name: string;
+  protocol: PlannerProtocol;
+  signalPins: SignalPinOption[];
+}
+
 export interface ControllerCatalogEntry {
   id: string;
   name: string;
@@ -69,7 +83,8 @@ export interface ControllerCatalogEntry {
   voltage: string;
   notes: string;
   protocols: Protocol[];
-  interfaces: string[];
+  interfaces: ControllerInterfaceDefinition[];
+  gpioPins: string[];
 }
 
 export interface LibraryCategory {
@@ -86,6 +101,19 @@ export interface ComponentCatalogEntry {
   voltage: string;
   packageName: string;
   supportedProtocols: Protocol[];
+  connectionOptions: ComponentConnectionOption[];
+}
+
+export interface ComponentConnectionSignalDefinition {
+  name: string;
+  source: "interface" | "gpio";
+  sharedBehavior: "reuse-on-shared" | "unique";
+}
+
+export interface ComponentConnectionOption {
+  protocol: PlannerProtocol;
+  notes: string;
+  optionalSignals: ComponentConnectionSignalDefinition[];
 }
 
 export interface ProjectComponentRecord {

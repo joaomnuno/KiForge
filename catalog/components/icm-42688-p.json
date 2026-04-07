@@ -6,5 +6,21 @@
   "summary": "6-axis IMU with low-noise accel and gyro readings.",
   "voltage": "1.71V - 3.6V",
   "packageName": "QFN-14",
-  "supportedProtocols": ["SPI", "I2C", "GPIO"]
+  "supportedProtocols": ["SPI", "I2C", "GPIO"],
+  "connectionOptions": [
+    {
+      "protocol": "SPI",
+      "notes": "Use SPI when you want the higher-rate sensor path and explicit chip-select control.",
+      "optionalSignals": [
+        { "name": "INT", "source": "gpio", "sharedBehavior": "unique" }
+      ]
+    },
+    {
+      "protocol": "I2C",
+      "notes": "Use I2C when you want to keep the IMU on a shared sensor bus.",
+      "optionalSignals": [
+        { "name": "INT", "source": "gpio", "sharedBehavior": "unique" }
+      ]
+    }
+  ]
 }

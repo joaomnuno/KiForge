@@ -6,5 +6,21 @@
   "summary": "Precision barometric sensor with SPI and I2C support.",
   "voltage": "1.65V - 3.6V",
   "packageName": "LGA-10",
-  "supportedProtocols": ["SPI", "I2C", "GPIO"]
+  "supportedProtocols": ["SPI", "I2C", "GPIO"],
+  "connectionOptions": [
+    {
+      "protocol": "SPI",
+      "notes": "SPI keeps the barometer on a dedicated high-speed interface with a dedicated chip-select.",
+      "optionalSignals": [
+        { "name": "INT", "source": "gpio", "sharedBehavior": "unique" }
+      ]
+    },
+    {
+      "protocol": "I2C",
+      "notes": "I2C keeps the barometer shareable with other low-rate peripherals.",
+      "optionalSignals": [
+        { "name": "INT", "source": "gpio", "sharedBehavior": "unique" }
+      ]
+    }
+  ]
 }

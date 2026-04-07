@@ -6,5 +6,15 @@
   "summary": "Compact SWD header footprint for debug and flashing.",
   "voltage": "Board logic",
   "packageName": "Connector footprint",
-  "supportedProtocols": ["SWD", "GPIO"]
+  "supportedProtocols": ["SWD", "GPIO"],
+  "connectionOptions": [
+    {
+      "protocol": "SWD",
+      "notes": "SWD keeps the debug header on the controller debug port with optional reset and trace signals.",
+      "optionalSignals": [
+        { "name": "NRST", "source": "gpio", "sharedBehavior": "unique" },
+        { "name": "SWO", "source": "gpio", "sharedBehavior": "unique" }
+      ]
+    }
+  ]
 }

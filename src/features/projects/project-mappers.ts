@@ -17,7 +17,8 @@ function makeFallbackController(controllerId: string): ControllerCatalogEntry {
     voltage: "Unknown",
     notes: "This controller is missing from the local catalog.",
     protocols: [],
-    interfaces: []
+    interfaces: [],
+    gpioPins: []
   };
 }
 
@@ -30,7 +31,8 @@ function makeFallbackComponent(componentId: string): ComponentCatalogEntry {
     summary: "This component is missing from the local catalog.",
     voltage: "Unknown",
     packageName: "Unknown package",
-    supportedProtocols: []
+    supportedProtocols: [],
+    connectionOptions: []
   };
 }
 

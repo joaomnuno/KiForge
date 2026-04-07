@@ -8,7 +8,8 @@ function getTone(label: StatusBadgeProps["label"]) {
     label === "Ready to Generate" ||
     label === "Generated" ||
     label === "Valid" ||
-    label === "Connected"
+    label === "Connected" ||
+    label === "Unused"
   ) {
     return "success";
   }
@@ -16,7 +17,8 @@ function getTone(label: StatusBadgeProps["label"]) {
   if (
     label === "Has Conflicts" ||
     label === "Needs work" ||
-    label === "Unconnected"
+    label === "Unconnected" ||
+    label === "Conflict"
   ) {
     return "error";
   }

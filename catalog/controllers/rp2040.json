@@ -5,5 +5,86 @@
   "voltage": "3.3V logic",
   "notes": "Simple dual-core option for tooling, debug, and utility boards.",
   "protocols": ["SPI", "I2C", "UART", "USB", "GPIO"],
-  "interfaces": ["SPI0", "SPI1", "I2C0", "I2C1", "UART0", "UART1"]
+  "interfaces": [
+    {
+      "name": "SPI0",
+      "protocol": "SPI",
+      "signalPins": [
+        { "signal": "SCK", "pins": ["GPIO2", "GPIO18"] },
+        { "signal": "MISO", "pins": ["GPIO4", "GPIO16"] },
+        { "signal": "MOSI", "pins": ["GPIO3", "GPIO19"] }
+      ]
+    },
+    {
+      "name": "SPI1",
+      "protocol": "SPI",
+      "signalPins": [
+        { "signal": "SCK", "pins": ["GPIO10", "GPIO14"] },
+        { "signal": "MISO", "pins": ["GPIO8", "GPIO12"] },
+        { "signal": "MOSI", "pins": ["GPIO11", "GPIO15"] }
+      ]
+    },
+    {
+      "name": "I2C0",
+      "protocol": "I2C",
+      "signalPins": [
+        { "signal": "SCL", "pins": ["GPIO1", "GPIO5"] },
+        { "signal": "SDA", "pins": ["GPIO0", "GPIO4"] }
+      ]
+    },
+    {
+      "name": "I2C1",
+      "protocol": "I2C",
+      "signalPins": [
+        { "signal": "SCL", "pins": ["GPIO3", "GPIO7"] },
+        { "signal": "SDA", "pins": ["GPIO2", "GPIO6"] }
+      ]
+    },
+    {
+      "name": "UART0",
+      "protocol": "UART",
+      "signalPins": [
+        { "signal": "TX", "pins": ["GPIO0", "GPIO12"] },
+        { "signal": "RX", "pins": ["GPIO1", "GPIO13"] }
+      ]
+    },
+    {
+      "name": "UART1",
+      "protocol": "UART",
+      "signalPins": [
+        { "signal": "TX", "pins": ["GPIO4", "GPIO8"] },
+        { "signal": "RX", "pins": ["GPIO5", "GPIO9"] }
+      ]
+    },
+    {
+      "name": "USB0",
+      "protocol": "USB",
+      "signalPins": [
+        { "signal": "D+", "pins": ["USB_DP"] },
+        { "signal": "D-", "pins": ["USB_DM"] }
+      ]
+    }
+  ],
+  "gpioPins": [
+    "GPIO20",
+    "GPIO21",
+    "GPIO22",
+    "GPIO23",
+    "GPIO24",
+    "GPIO25",
+    "GPIO26",
+    "GPIO27",
+    "GPIO28",
+    "GPIO29",
+    "GPIO15",
+    "GPIO14",
+    "GPIO13",
+    "GPIO12",
+    "GPIO11",
+    "GPIO10",
+    "GPIO9",
+    "GPIO8",
+    "GPIO7",
+    "GPIO6"
+  ]
 }

@@ -13,6 +13,7 @@ The repository now has:
 - browser fallback storage for web preview
 - JSON-backed controller and component catalogs
 - project, component, and connection pages wired to the persisted workspace store
+- an interactive connection planner with explicit auto-assign, shared-bus rules, and saved connection editing
 - setup docs and CI/release workflow stubs
 
 ## Build order
@@ -61,22 +62,18 @@ The repository now has:
 - component adds saved back into the active project
 - connection page reading saved project data instead of inline mocks
 
+### 4. Connection planner
+
+- selected device context on the connections page
+- protocol compatibility filtered by component and controller metadata
+- controller interface availability with explicit dedicated/shared bus rules
+- signal-to-pin candidate lists with explicit auto-assign
+- editable review/save cycle persisted into the project document
+- derived validation for unconnected parts, missing signals, and pin conflicts
+
 ## Immediate priorities
 
-### 1. Connection planner
-
-Turn the current persisted connections page into the interactive MVP workflow.
-
-Deliverables:
-
-- selected device context
-- protocol compatibility computation
-- interface availability computation
-- signal-to-pin candidate list
-- explicit auto-assign action
-- editable review/save cycle
-
-### 2. Validation and export
+### 1. Validation and export
 
 The app becomes useful only when it can explain what is valid, what conflicts, and what can be exported.
 
@@ -85,6 +82,16 @@ Deliverables:
 - warning and error model
 - validation summary in the workspace
 - richer export command and basic output manifest
+
+### 2. Output generation
+
+The next useful milestone is exporting something the user can inspect outside the app.
+
+Deliverables:
+
+- richer desktop export command
+- starter output folder structure
+- project manifest describing controller, components, and saved connections
 
 ## Files to touch next
 

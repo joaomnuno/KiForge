@@ -51,7 +51,7 @@ export const projectDocumentSchema = z.object({
       assignments: z.array(
         z.object({
           signal: z.string().min(1),
-          selectedPin: z.string().min(1),
+          selectedPin: z.string(),
           alternatePins: z.array(z.string()),
           status: z.enum(signalAssignmentStatuses)
         })
