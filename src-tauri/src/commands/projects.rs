@@ -21,7 +21,10 @@ pub fn load_projects(app: AppHandle) -> Result<Vec<ProjectDocument>, String> {
 }
 
 #[tauri::command]
-pub fn create_project(app: AppHandle, input: CreateProjectInput) -> Result<ProjectDocument, String> {
+pub fn create_project(
+    app: AppHandle,
+    input: CreateProjectInput,
+) -> Result<ProjectDocument, String> {
     project_store(&app)?.create_project(input)
 }
 

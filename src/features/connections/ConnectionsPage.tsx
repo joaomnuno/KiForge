@@ -14,6 +14,7 @@ import {
   getDraftSignalRows,
   getInterfaceOptions,
   getAvailableOptionalSignals,
+  getProjectValidationSummary,
   normalizeConnectionDraft,
   type ConnectionDraft
 } from "./planner";
@@ -24,7 +25,9 @@ export function ConnectionsPage() {
   const isLoading = useWorkspaceStore((state) => state.isLoading);
   const isSaving = useWorkspaceStore((state) => state.isSaving);
   const errorMessage = useWorkspaceStore((state) => state.errorMessage);
-  const saveCurrentProject = useWorkspaceStore((state) => state.saveCurrentProject);
+  const saveCurrentProject = useWorkspaceStore(
+    (state) => state.saveCurrentProject
+  );
   const saveConnectionToCurrentProject = useWorkspaceStore(
     (state) => state.saveConnectionToCurrentProject
   );
@@ -36,7 +39,9 @@ export function ConnectionsPage() {
 
   const activeComponent = useMemo(
     () =>
-      currentProject?.components.find((component) => component.id === selectedComponentId) ??
+      currentProject?.components.find(
+        (component) => component.id === selectedComponentId
+      ) ??
       currentProject?.components[0] ??
       null,
     [currentProject, selectedComponentId]
@@ -50,7 +55,9 @@ export function ConnectionsPage() {
 
     if (
       !selectedComponentId ||
-      !currentProject.components.some((component) => component.id === selectedComponentId)
+      !currentProject.components.some(
+        (component) => component.id === selectedComponentId
+      )
     ) {
       setSelectedComponentId(currentProject.components[0].id);
     }
@@ -68,9 +75,9 @@ export function ConnectionsPage() {
   const existingConnection = useMemo(
     () =>
       activeComponent && currentProject
-        ? currentProject.connections.find(
+        ? (currentProject.connections.find(
             (connection) => connection.componentId === activeComponent.id
-          ) ?? null
+          ) ?? null)
         : null,
     [activeComponent, currentProject]
   );
@@ -86,7 +93,11 @@ export function ConnectionsPage() {
   const interfaceOptions = useMemo(
     () =>
       currentProject && draft?.protocol
-        ? getInterfaceOptions(currentProject, draft.protocol, draft.existingConnectionId)
+        ? getInterfaceOptions(
+            currentProject,
+            draft.protocol,
+            draft.existingConnectionId
+          )
         : [],
     [currentProject, draft]
   );
@@ -94,7 +105,9 @@ export function ConnectionsPage() {
   const allowedBusModes = useMemo(
     () =>
       getAllowedBusModes(
-        interfaceOptions.find((option) => option.name === draft?.controllerInterface)
+        interfaceOptions.find(
+          (option) => option.name === draft?.controllerInterface
+        )
       ),
     [draft?.controllerInterface, interfaceOptions]
   );
@@ -102,22 +115,35 @@ export function ConnectionsPage() {
   const availableOptionalSignals = useMemo(
     () =>
       currentProject && draft
-        ? getAvailableOptionalSignals(currentProject, draft.componentId, draft.protocol)
+        ? getAvailableOptionalSignals(
+            currentProject,
+            draft.componentId,
+            draft.protocol
+          )
         : [],
     [currentProject, draft]
   );
 
   const signalRows = useMemo(
-    () => (currentProject && draft ? getDraftSignalRows(currentProject, draft) : []),
+    () =>
+      currentProject && draft ? getDraftSignalRows(currentProject, draft) : [],
     [currentProject, draft]
   );
 
   const draftIssues = useMemo(
-    () => (currentProject && draft ? getDraftIssues(currentProject, draft) : []),
+    () =>
+      currentProject && draft ? getDraftIssues(currentProject, draft) : [],
     [currentProject, draft]
   );
 
-  function updateDraft(mutator: (currentDraft: ConnectionDraft) => ConnectionDraft) {
+  const validationSummary = useMemo(
+    () => (currentProject ? getProjectValidationSummary(currentProject) : null),
+    [currentProject]
+  );
+
+  function updateDraft(
+    mutator: (currentDraft: ConnectionDraft) => ConnectionDraft
+  ) {
     if (!currentProject) {
       return;
     }
@@ -184,7 +210,10 @@ export function ConnectionsPage() {
 
   if (!currentProject) {
     return (
-      <AppScaffold activeNav="devices" searchPlaceholder="Search devices, interfaces, or pins...">
+      <AppScaffold
+        activeNav="devices"
+        searchPlaceholder="Search devices, interfaces, or pins..."
+      >
         <Panel
           title={isLoading ? "Loading workspace" : "No project selected"}
           description={
@@ -286,11 +315,17 @@ export function ConnectionsPage() {
 
           <Panel
             eyebrow="Interface availability"
-            title={draft?.protocol ? `${draft.protocol} controller paths` : "Choose a protocol"}
+            title={
+              draft?.protocol
+                ? `${draft.protocol} controller paths`
+                : "Choose a protocol"
+            }
             description="Unused interfaces can be dedicated. Shared-capable buses must be marked explicitly before anything else joins them."
           >
             {interfaceOptions.length === 0 ? (
-              <p>No controller interfaces are available for this protocol yet.</p>
+              <p>
+                No controller interfaces are available for this protocol yet.
+              </p>
             ) : (
               <ul className="list-reset stack-sm">
                 {interfaceOptions.map((option) => (
@@ -316,7 +351,10 @@ export function ConnectionsPage() {
             ) : (
               <ul className="list-reset stack-sm">
                 {draftIssues.map((issue) => (
-                  <li key={issue.id} className={`issue issue--${issue.severity}`}>
+                  <li
+                    key={issue.id}
+                    className={`issue issue--${issue.severity}`}
+                  >
                     {issue.message}
                   </li>
                 ))}
@@ -352,6 +390,64 @@ export function ConnectionsPage() {
 
         <div className="stack-lg">
           <Panel
+            eyebrow="Project validation"
+            title="Validation summary"
+            description="Saved connection issues are rolled up across the project."
+            headerActions={<StatusBadge label={currentProject.status} />}
+          >
+            {validationSummary ? (
+              <div className="planner-summary">
+                <div>
+                  <dt>Connected devices</dt>
+                  <dd>
+                    {validationSummary.connectedDevices}/
+                    {validationSummary.totalDevices}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Saved connections</dt>
+                  <dd>{validationSummary.savedConnections}</dd>
+                </div>
+                <div>
+                  <dt>Unresolved issues</dt>
+                  <dd>{validationSummary.unresolvedIssues}</dd>
+                </div>
+                <div>
+                  <dt>Error conflicts</dt>
+                  <dd>{validationSummary.errorConflicts}</dd>
+                </div>
+                <div>
+                  <dt>Warnings</dt>
+                  <dd>{validationSummary.warningCount}</dd>
+                </div>
+                <div>
+                  <dt>Optional unresolved</dt>
+                  <dd>{validationSummary.optionalUnresolved}</dd>
+                </div>
+                <div>
+                  <dt>Optional signals</dt>
+                  <dd>{validationSummary.optionalSignalCount}</dd>
+                </div>
+              </div>
+            ) : null}
+
+            {currentProject.issues.length === 0 ? (
+              <p>No project issues right now.</p>
+            ) : (
+              <ul className="list-reset stack-sm">
+                {currentProject.issues.map((issue) => (
+                  <li
+                    key={issue.id}
+                    className={`issue issue--${issue.severity}`}
+                  >
+                    {issue.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          <Panel
             eyebrow="Connection planner"
             title="Active connections"
             description="Each saved connection now comes from the real project document and can be reopened through the device list."
@@ -369,7 +465,11 @@ export function ConnectionsPage() {
                 >
                   Auto-assign suggestions
                 </Button>
-                <Button disabled={isSaving} onClick={handleNewConnection} type="button">
+                <Button
+                  disabled={isSaving}
+                  onClick={handleNewConnection}
+                  type="button"
+                >
                   New connection
                 </Button>
               </div>
@@ -377,7 +477,9 @@ export function ConnectionsPage() {
           >
             {errorMessage ? <p className="form-note">{errorMessage}</p> : null}
             {currentProject.connections.length === 0 ? (
-              <p>No logical connections have been saved for this project yet.</p>
+              <p>
+                No logical connections have been saved for this project yet.
+              </p>
             ) : (
               <div className="connection-grid">
                 {currentProject.connections.map((connection) => (
@@ -400,7 +502,9 @@ export function ConnectionsPage() {
                     </div>
                     <div className="chip-row">
                       <span className="chip">{connection.protocol}</span>
-                      <span className="chip">{connection.controllerInterface}</span>
+                      <span className="chip">
+                        {connection.controllerInterface}
+                      </span>
                       <span className="chip">{connection.busMode} bus</span>
                     </div>
                     <p className="connection-card__pins">
@@ -429,8 +533,8 @@ export function ConnectionsPage() {
               <p>No component is selected for planning.</p>
             ) : compatibleProtocols.length === 0 ? (
               <p>
-                {activeComponent.instanceName} has no compatible controller interface on{" "}
-                {currentProject.controller.name}.
+                {activeComponent.instanceName} has no compatible controller
+                interface on {currentProject.controller.name}.
               </p>
             ) : !draft ? (
               <p>The planner could not initialize this connection draft.</p>
@@ -460,7 +564,11 @@ export function ConnectionsPage() {
                     ))}
                   </div>
                   <p className="planner-note">
-                    {compatibleProtocols.find((option) => option.protocol === draft.protocol)?.notes}
+                    {
+                      compatibleProtocols.find(
+                        (option) => option.protocol === draft.protocol
+                      )?.notes
+                    }
                   </p>
                 </div>
 
@@ -520,7 +628,8 @@ export function ConnectionsPage() {
                     <div>
                       <p className="eyebrow">Signal assignments</p>
                       <p className="planner-note">
-                        Auto-assignment is explicit. Every selected pin remains editable.
+                        Auto-assignment is explicit. Every selected pin remains
+                        editable.
                       </p>
                     </div>
                   </div>
@@ -530,7 +639,11 @@ export function ConnectionsPage() {
                       <div key={row.signal} className="planner-row">
                         <div className="planner-row__meta">
                           <strong>{row.signal}</strong>
-                          <span>{row.optional ? "Optional signal" : "Required signal"}</span>
+                          <span>
+                            {row.optional
+                              ? "Optional signal"
+                              : "Required signal"}
+                          </span>
                         </div>
 
                         <select
@@ -548,7 +661,10 @@ export function ConnectionsPage() {
                         >
                           <option value="">Unassigned</option>
                           {row.candidates.map((candidate) => (
-                            <option key={`${row.signal}-${candidate.pin}`} value={candidate.pin}>
+                            <option
+                              key={`${row.signal}-${candidate.pin}`}
+                              value={candidate.pin}
+                            >
                               {candidate.pin} | {candidate.note}
                             </option>
                           ))}
@@ -563,29 +679,43 @@ export function ConnectionsPage() {
                 <div className="planner-section">
                   <p className="eyebrow">Optional signals</p>
                   {availableOptionalSignals.length === 0 ? (
-                    <p className="planner-note">This protocol has no optional signals in the MVP catalog.</p>
+                    <p className="planner-note">
+                      This protocol has no optional signals in the MVP catalog.
+                    </p>
                   ) : (
                     <div className="button-group">
                       {availableOptionalSignals.map((signal) => {
-                        const enabled = draft.enabledOptionalSignals.includes(signal.name);
+                        const enabled = draft.enabledOptionalSignals.includes(
+                          signal.name
+                        );
 
                         return (
                           <button
                             key={signal.name}
-                            className={enabled ? "filter-pill filter-pill--active" : "filter-pill"}
+                            className={
+                              enabled
+                                ? "filter-pill filter-pill--active"
+                                : "filter-pill"
+                            }
                             onClick={() =>
                               updateDraft((currentDraft) => ({
                                 ...currentDraft,
                                 enabledOptionalSignals: enabled
                                   ? currentDraft.enabledOptionalSignals.filter(
-                                      (currentSignal) => currentSignal !== signal.name
+                                      (currentSignal) =>
+                                        currentSignal !== signal.name
                                     )
-                                  : [...currentDraft.enabledOptionalSignals, signal.name]
+                                  : [
+                                      ...currentDraft.enabledOptionalSignals,
+                                      signal.name
+                                    ]
                               }))
                             }
                             type="button"
                           >
-                            {enabled ? `Remove ${signal.name}` : `Add ${signal.name}`}
+                            {enabled
+                              ? `Remove ${signal.name}`
+                              : `Add ${signal.name}`}
                           </button>
                         );
                       })}
@@ -635,7 +765,9 @@ export function ConnectionsPage() {
                   </div>
 
                   <Button
-                    disabled={isSaving || !draft.protocol || !draft.controllerInterface}
+                    disabled={
+                      isSaving || !draft.protocol || !draft.controllerInterface
+                    }
                     onClick={() => void handleSaveConnection()}
                     type="button"
                   >

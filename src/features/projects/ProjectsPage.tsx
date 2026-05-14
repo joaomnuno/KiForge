@@ -19,11 +19,15 @@ export function ProjectsPage() {
   const projects = useWorkspaceStore((state) => state.projects);
   const isLoading = useWorkspaceStore((state) => state.isLoading);
   const isSaving = useWorkspaceStore((state) => state.isSaving);
+  const isExporting = useWorkspaceStore((state) => state.isExporting);
   const errorMessage = useWorkspaceStore((state) => state.errorMessage);
+  const exportResult = useWorkspaceStore((state) => state.exportResult);
   const openProject = useWorkspaceStore((state) => state.openProject);
   const renameProject = useWorkspaceStore((state) => state.renameProject);
   const duplicateProject = useWorkspaceStore((state) => state.duplicateProject);
   const deleteProject = useWorkspaceStore((state) => state.deleteProject);
+  const exportProject = useWorkspaceStore((state) => state.exportProject);
+  const isBusy = isSaving || isExporting;
 
   async function handleOpenProject(projectId: string) {
     await openProject(projectId);
@@ -41,8 +45,14 @@ export function ProjectsPage() {
     await renameProject(projectId, nextName);
   }
 
-  async function handleDuplicateProject(projectId: string, projectName: string) {
-    const nextName = window.prompt("Duplicate project as", `${projectName} Copy`);
+  async function handleDuplicateProject(
+    projectId: string,
+    projectName: string
+  ) {
+    const nextName = window.prompt(
+      "Duplicate project as",
+      `${projectName} Copy`
+    );
     await duplicateProject(projectId, nextName ?? undefined);
   }
 
@@ -53,6 +63,10 @@ export function ProjectsPage() {
     }
 
     await deleteProject(projectId);
+  }
+
+  async function handleExportProject(projectId: string) {
+    await exportProject(projectId);
   }
 
   return (
@@ -117,11 +131,29 @@ export function ProjectsPage() {
           </Panel>
         ) : null}
 
+        {exportResult ? (
+          <Panel title="Export ready" description={exportResult.message}>
+            {exportResult.kind === "download-url" ? (
+              <div className="button-group">
+                <a
+                  className="button button--secondary"
+                  download={exportResult.fileName}
+                  href={exportResult.target}
+                >
+                  Download JSON
+                </a>
+              </div>
+            ) : null}
+          </Panel>
+        ) : null}
+
         <div className="filter-row">
           {filterPills.map((pill, index) => (
             <button
               key={pill}
-              className={index === 0 ? "filter-pill filter-pill--active" : "filter-pill"}
+              className={
+                index === 0 ? "filter-pill filter-pill--active" : "filter-pill"
+              }
               type="button"
             >
               {pill}
@@ -130,7 +162,10 @@ export function ProjectsPage() {
         </div>
 
         {isLoading && projects.length === 0 ? (
-          <Panel title="Loading projects" description="Reading local project files now." />
+          <Panel
+            title="Loading projects"
+            description="Reading local project files now."
+          />
         ) : null}
 
         {!isLoading && projects.length === 0 ? (
@@ -179,9 +214,9 @@ export function ProjectsPage() {
                   </div>
                 </dl>
 
-                <div className="project-card__actions">
+                <div className="project-card__actions button-group">
                   <Button
-                    disabled={isSaving}
+                    disabled={isBusy}
                     onClick={() => void handleOpenProject(project.id)}
                     type="button"
                     variant="secondary"
@@ -189,24 +224,38 @@ export function ProjectsPage() {
                     Open
                   </Button>
                   <Button
-                    disabled={isSaving}
-                    onClick={() => void handleDuplicateProject(project.id, project.name)}
+                    disabled={isBusy}
+                    onClick={() =>
+                      void handleDuplicateProject(project.id, project.name)
+                    }
                     type="button"
                     variant="ghost"
                   >
                     Duplicate
                   </Button>
                   <Button
-                    disabled={isSaving}
-                    onClick={() => void handleRenameProject(project.id, project.name)}
+                    disabled={isBusy}
+                    onClick={() => void handleExportProject(project.id)}
+                    type="button"
+                    variant="ghost"
+                  >
+                    Export
+                  </Button>
+                  <Button
+                    disabled={isBusy}
+                    onClick={() =>
+                      void handleRenameProject(project.id, project.name)
+                    }
                     type="button"
                     variant="ghost"
                   >
                     Rename
                   </Button>
                   <Button
-                    disabled={isSaving}
-                    onClick={() => void handleDeleteProject(project.id, project.name)}
+                    disabled={isBusy}
+                    onClick={() =>
+                      void handleDeleteProject(project.id, project.name)
+                    }
                     type="button"
                     variant="ghost"
                   >

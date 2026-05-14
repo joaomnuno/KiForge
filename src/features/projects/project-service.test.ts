@@ -17,7 +17,10 @@ describe("browserProjectService", () => {
 
     expect(created.id).toBe("rocket-fc");
 
-    const renamed = await browserProjectService.renameProject(created.id, "Rocket FC Rev B");
+    const renamed = await browserProjectService.renameProject(
+      created.id,
+      "Rocket FC Rev B"
+    );
     expect(renamed.name).toBe("Rocket FC Rev B");
 
     const duplicate = await browserProjectService.duplicateProject(created.id);

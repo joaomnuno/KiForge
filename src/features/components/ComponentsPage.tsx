@@ -15,19 +15,27 @@ export function ComponentsPage() {
   const addComponentToCurrentProject = useWorkspaceStore(
     (state) => state.addComponentToCurrentProject
   );
-  const saveCurrentProject = useWorkspaceStore((state) => state.saveCurrentProject);
+  const saveCurrentProject = useWorkspaceStore(
+    (state) => state.saveCurrentProject
+  );
   const [activeCategoryId, setActiveCategoryId] = useState(
     catalog.categories[0]?.id ?? ""
   );
 
   const visibleEntries = useMemo(
-    () => catalog.components.filter((entry) => entry.categoryId === activeCategoryId),
+    () =>
+      catalog.components.filter(
+        (entry) => entry.categoryId === activeCategoryId
+      ),
     [activeCategoryId]
   );
 
   if (!currentProject) {
     return (
-      <AppScaffold activeNav="library" searchPlaceholder="Search components, packages, or protocols...">
+      <AppScaffold
+        activeNav="library"
+        searchPlaceholder="Search components, packages, or protocols..."
+      >
         <Panel
           title={isLoading ? "Loading workspace" : "No project selected"}
           description={
@@ -87,7 +95,10 @@ export function ComponentsPage() {
             title="Move to connection planning"
             description="Once the inventory is stable, define logical protocols, controller interfaces, and pin mappings."
           >
-            <Link className="button button--primary button--block" to="/workspace/connections">
+            <Link
+              className="button button--primary button--block"
+              to="/workspace/connections"
+            >
               Continue to connections
             </Link>
           </Panel>

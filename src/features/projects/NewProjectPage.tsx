@@ -25,7 +25,8 @@ export function NewProjectPage() {
     resolver: zodResolver(createProjectInputSchema),
     defaultValues: {
       name: "Flight Controller Rev B",
-      description: "Next-gen drone controller with high-speed logging and sensing.",
+      description:
+        "Next-gen drone controller with high-speed logging and sensing.",
       controllerId: getInitialControllerId(),
       template: "Blank project",
       voltageDomain: "3.3V",
@@ -37,8 +38,9 @@ export function NewProjectPage() {
 
   const selectedController = useMemo(
     () =>
-      catalog.controllers.find((controller) => controller.id === selectedControllerId) ??
-      catalog.controllers[0],
+      catalog.controllers.find(
+        (controller) => controller.id === selectedControllerId
+      ) ?? catalog.controllers[0],
     [selectedControllerId]
   );
 
@@ -94,7 +96,9 @@ export function NewProjectPage() {
             <ul className="list-reset stack-sm">
               <li className="inspector-row">
                 <strong>Controller choice</strong>
-                <span>Drives interface availability and pin candidates later.</span>
+                <span>
+                  Drives interface availability and pin candidates later.
+                </span>
               </li>
               <li className="inspector-row">
                 <strong>Template</strong>
@@ -102,7 +106,9 @@ export function NewProjectPage() {
               </li>
               <li className="inspector-row">
                 <strong>Output target</strong>
-                <span>Defaults to a KiCad starter project for the MVP path.</span>
+                <span>
+                  Defaults to a KiCad starter project for the MVP path.
+                </span>
               </li>
             </ul>
           </Panel>
@@ -138,7 +144,9 @@ export function NewProjectPage() {
                 rows={4}
               />
               {errors.description ? (
-                <small className="field__error">{errors.description.message}</small>
+                <small className="field__error">
+                  {errors.description.message}
+                </small>
               ) : null}
             </label>
 

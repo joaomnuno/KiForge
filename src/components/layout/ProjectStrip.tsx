@@ -22,7 +22,9 @@ export function ProjectStrip({
     <div className="project-strip">
       <div className="project-strip__meta">
         <h1>{name}</h1>
-        <p>{controller} | {voltageDomain} domain</p>
+        <p>
+          {controller} | {voltageDomain} domain
+        </p>
       </div>
       <div className="project-strip__stats">
         <StatusBadge label={status} />
