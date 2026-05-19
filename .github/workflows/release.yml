@@ -42,11 +42,10 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: npm
+          bun-version: latest
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -57,7 +56,7 @@ jobs:
           workspaces: ./src-tauri -> target
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - uses: tauri-apps/tauri-action@v0
         env:
@@ -69,3 +68,4 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+          tauriScript: bun run tauri
