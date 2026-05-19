@@ -680,7 +680,7 @@ export function ConnectionsPage() {
                   <p className="eyebrow">Optional signals</p>
                   {availableOptionalSignals.length === 0 ? (
                     <p className="planner-note">
-                      This protocol has no optional signals in the MVP catalog.
+                      This protocol has no optional signals in the catalog.
                     </p>
                   ) : (
                     <div className="button-group">

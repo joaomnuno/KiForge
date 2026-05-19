@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AppScaffold } from "../../components/layout/AppScaffold";
 import { Button } from "../../components/ui/Button";
@@ -6,13 +7,10 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatTimestamp } from "../../lib/date-format";
 import { useWorkspaceStore } from "./project-store";
 
-const filterPills = [
-  "All Projects",
-  "Recent",
-  "Favorites",
-  "Templates",
-  "Ready to generate"
-] as const;
+const filterPills = ["All Projects", "Recent", "Ready to generate"] as const;
+type ProjectFilter = (typeof filterPills)[number];
+
+const RECENT_PROJECT_LIMIT = 5;
 
 export function ProjectsPage() {
   const navigate = useNavigate();
@@ -28,6 +26,24 @@ export function ProjectsPage() {
   const deleteProject = useWorkspaceStore((state) => state.deleteProject);
   const exportProject = useWorkspaceStore((state) => state.exportProject);
   const isBusy = isSaving || isExporting;
+  const [activeFilter, setActiveFilter] =
+    useState<ProjectFilter>("All Projects");
+
+  const filteredProjects = useMemo(() => {
+    switch (activeFilter) {
+      case "Recent":
+        return [...projects]
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+          .slice(0, RECENT_PROJECT_LIMIT);
+      case "Ready to generate":
+        return projects.filter(
+          (project) => project.status === "Ready to Generate"
+        );
+      case "All Projects":
+      default:
+        return projects;
+    }
+  }, [activeFilter, projects]);
 
   async function handleOpenProject(projectId: string) {
     await openProject(projectId);
@@ -90,23 +106,28 @@ export function ProjectsPage() {
 
           <Panel
             eyebrow="Starter templates"
-            title="Suggested first-run projects"
-            description="Templates are still static, but the project list now loads from persisted local data."
+            title="Skip the blank slate"
+            description="Templates preselect a controller, voltage domain, and a suggested device list."
           >
             <ul className="list-reset stack-sm">
               <li className="inspector-row">
-                <strong>STM32 sensor node</strong>
-                <span>MCU + flash + IMU + barometer</span>
+                <strong>STM32 flight controller</strong>
+                <span>STM32F405 + IMU + barometer</span>
               </li>
               <li className="inspector-row">
                 <strong>RP2040 utility board</strong>
-                <span>USB + UART bridge + GPIO header</span>
+                <span>USB bridge + debug header</span>
               </li>
               <li className="inspector-row">
-                <strong>ESP32 data logger</strong>
-                <span>Wireless + storage + debug console</span>
+                <strong>STM32H7 data logger</strong>
+                <span>High-throughput logging + flash storage</span>
               </li>
             </ul>
+            <div className="button-group">
+              <Link className="button button--secondary" to="/templates">
+                Browse templates
+              </Link>
+            </div>
           </Panel>
         </>
       }
@@ -148,12 +169,15 @@ export function ProjectsPage() {
         ) : null}
 
         <div className="filter-row">
-          {filterPills.map((pill, index) => (
+          {filterPills.map((pill) => (
             <button
               key={pill}
               className={
-                index === 0 ? "filter-pill filter-pill--active" : "filter-pill"
+                pill === activeFilter
+                  ? "filter-pill filter-pill--active"
+                  : "filter-pill"
               }
+              onClick={() => setActiveFilter(pill)}
               type="button"
             >
               {pill}
@@ -181,9 +205,30 @@ export function ProjectsPage() {
           </Panel>
         ) : null}
 
-        {projects.length > 0 ? (
+        {projects.length > 0 && filteredProjects.length === 0 ? (
+          <Panel
+            title={`No projects match "${activeFilter}"`}
+            description={
+              activeFilter === "Ready to generate"
+                ? "Finish pin mapping on a project to surface it here."
+                : "Try a different filter to see more projects."
+            }
+          >
+            <div className="button-group">
+              <Button
+                onClick={() => setActiveFilter("All Projects")}
+                type="button"
+                variant="secondary"
+              >
+                Show all projects
+              </Button>
+            </div>
+          </Panel>
+        ) : null}
+
+        {filteredProjects.length > 0 ? (
           <section className="cards-grid">
-            {projects.map((project) => (
+            {filteredProjects.map((project) => (
               <article key={project.id} className="project-card">
                 <div className="project-card__header">
                   <div>

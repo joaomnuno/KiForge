@@ -1,19 +1,31 @@
 import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AppScaffold } from "../../components/layout/AppScaffold";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { catalog } from "../catalog/catalog";
+import { findProjectTemplate } from "../templates/templates-catalog";
 import { getInitialControllerId } from "./project-mappers";
 import { createProjectInputSchema } from "./project-schemas";
 import { useWorkspaceStore } from "./project-store";
 import type { CreateProjectInput } from "../../types/domain";
 
+interface NewProjectLocationState {
+  templateId?: string;
+}
+
 export function NewProjectPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const incomingTemplateId =
+    (location.state as NewProjectLocationState | null)?.templateId ?? null;
+  const incomingTemplate = findProjectTemplate(incomingTemplateId);
   const createProject = useWorkspaceStore((state) => state.createProject);
+  const addComponentToCurrentProject = useWorkspaceStore(
+    (state) => state.addComponentToCurrentProject
+  );
   const isSaving = useWorkspaceStore((state) => state.isSaving);
   const errorMessage = useWorkspaceStore((state) => state.errorMessage);
   const {
@@ -24,13 +36,15 @@ export function NewProjectPage() {
   } = useForm<CreateProjectInput>({
     resolver: zodResolver(createProjectInputSchema),
     defaultValues: {
-      name: "Flight Controller Rev B",
+      name: incomingTemplate?.defaultProjectName ?? "Flight Controller Rev B",
       description:
+        incomingTemplate?.defaultDescription ??
         "Next-gen drone controller with high-speed logging and sensing.",
-      controllerId: getInitialControllerId(),
-      template: "Blank project",
-      voltageDomain: "3.3V",
-      outputTarget: "Generate KiCad starter project"
+      controllerId: incomingTemplate?.controllerId ?? getInitialControllerId(),
+      template: incomingTemplate?.name ?? "Blank project",
+      voltageDomain: incomingTemplate?.voltageDomain ?? "3.3V",
+      outputTarget:
+        incomingTemplate?.outputTarget ?? "Generate KiCad starter project"
     }
   });
 
@@ -46,9 +60,17 @@ export function NewProjectPage() {
 
   async function onSubmit(values: CreateProjectInput) {
     const project = await createProject(values);
-    if (project) {
-      navigate("/workspace/components");
+    if (!project) {
+      return;
     }
+
+    if (incomingTemplate) {
+      for (const componentId of incomingTemplate.componentCatalogIds) {
+        await addComponentToCurrentProject(componentId);
+      }
+    }
+
+    navigate("/workspace/components");
   }
 
   return (
@@ -90,8 +112,8 @@ export function NewProjectPage() {
 
           <Panel
             eyebrow="Setup notes"
-            title="What this page should lock in"
-            description="Keep the MVP focused on identity, controller choice, voltage domain, and output target."
+            title="What this page locks in"
+            description="Identity, controller choice, voltage domain, and output target are confirmed here before you add devices."
           >
             <ul className="list-reset stack-sm">
               <li className="inspector-row">
@@ -102,13 +124,13 @@ export function NewProjectPage() {
               </li>
               <li className="inspector-row">
                 <strong>Template</strong>
-                <span>Stays optional and local in this persistence pass.</span>
+                <span>
+                  Preselects defaults but every field stays editable here.
+                </span>
               </li>
               <li className="inspector-row">
                 <strong>Output target</strong>
-                <span>
-                  Defaults to a KiCad starter project for the MVP path.
-                </span>
+                <span>Defaults to a KiCad starter project bundle.</span>
               </li>
             </ul>
           </Panel>

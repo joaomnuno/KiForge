@@ -128,7 +128,7 @@ export function ComponentsPage() {
         <Panel
           eyebrow="Component library"
           title="Available parts"
-          description="The MVP catalog is intentionally curated instead of pretending to be a full distributor database."
+          description="A curated catalog of devices ready to drop into your project."
         >
           {errorMessage ? <p className="form-note">{errorMessage}</p> : null}
           <div className="library-grid">

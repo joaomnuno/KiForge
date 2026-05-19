@@ -715,6 +715,110 @@ button {
   font-family: var(--font-mono);
 }
 
+.account-menu {
+  position: relative;
+}
+
+.avatar--button {
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    transform 120ms ease;
+}
+
+.avatar--button:hover {
+  border-color: rgba(102, 217, 204, 0.4);
+}
+
+.avatar--button:active {
+  transform: translateY(1px);
+}
+
+.account-menu__panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  min-width: 240px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: rgba(28, 27, 27, 0.98);
+  border: 1px solid var(--outline-ghost);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.account-menu__header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--outline-ghost);
+  margin-bottom: 4px;
+}
+
+.account-menu__header strong {
+  font-weight: 700;
+}
+
+.account-menu__header span {
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+}
+
+.account-menu__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-menu__group--last {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--outline-ghost);
+}
+
+.account-menu__item {
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.account-menu__item:hover,
+.account-menu__item:focus-visible {
+  background: rgba(102, 217, 204, 0.1);
+  color: var(--primary);
+}
+
+.account-menu__item--muted {
+  color: var(--text-subtle);
+}
+
+.field--inline {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.field--inline input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
 @media (max-width: 1200px) {
   .workspace--with-inspector {
     grid-template-columns: 1fr;
