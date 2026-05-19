@@ -23,15 +23,18 @@ It runs on:
 Each job performs:
 
 1. repository checkout
-2. Node setup
+2. Bun setup
 3. Rust setup
 4. Linux system dependency installation where needed
-5. `npm install`
-6. `npm run lint`
-7. `npm run typecheck`
-8. `npm run test`
-9. `npm run build`
-10. `npm run tauri:build -- --debug`
+5. `bun install --frozen-lockfile`
+6. `bun run lint`
+7. `bun run format:check`
+8. `bun run typecheck`
+9. `bun run test`
+10. `bun run build`
+11. `bun run rust:fmt`
+12. `bun run rust:clippy`
+13. `bun run rust:test`
 
 ## Continuous Delivery
 
@@ -53,6 +56,5 @@ The release workflow currently:
 
 ## Recommended next steps
 
-- Commit a `package-lock.json` after the first successful install and switch workflows from `npm install` to `npm ci`.
 - Add desktop smoke tests once the MVP connection flow is interactive.
 - Add signing and notarization after the release path is stable.

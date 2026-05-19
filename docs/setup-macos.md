@@ -16,11 +16,16 @@ xcode-select --install
 curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
 ```
 
-3. Confirm the toolchain is available:
+3. Install Bun (the project's package manager and JavaScript runtime):
 
 ```bash
-node --version
-npm --version
+curl -fsSL https://bun.sh/install | bash
+```
+
+4. Confirm the toolchain is available:
+
+```bash
+bun --version
 cargo --version
 rustc --version
 ```
@@ -28,22 +33,22 @@ rustc --version
 ## Project bootstrap
 
 ```bash
-npm install
-npm run lint
-npm run test
-npm run dev
+bun install
+bun run lint
+bun run test
+bun run dev
 ```
 
 Run the native app:
 
 ```bash
-npm run tauri:dev
+bun run tauri:dev
 ```
 
 Build a macOS bundle:
 
 ```bash
-npm run tauri:build
+bun run tauri:build
 ```
 
 ## Notes
