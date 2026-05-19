@@ -1,4 +1,4 @@
-import { getProjectProgress } from "./project-progress";
+import { deriveProjectStatus, getProjectProgress } from "./project-progress";
 import type {
   ComponentCatalogEntry,
   ControllerCatalogEntry,
@@ -289,5 +289,99 @@ describe("getProjectProgress", () => {
     const stepById = new Map(progress.steps.map((step) => [step.id, step]));
 
     expect(stepById.get("export")?.status).toBe("empty");
+  });
+});
+
+describe("deriveProjectStatus", () => {
+  function exportResultFor(projectId: string): ProjectExportResult {
+    return {
+      projectId,
+      projectName: "X",
+      fileName: "x.json",
+      target: "/tmp/x.json",
+      kind: "file-path",
+      message: "ok",
+      exportedAt: "2026-05-01T00:00:00.000Z"
+    };
+  }
+
+  it("returns Draft for an empty project", () => {
+    const progress = getProjectProgress(makeProject());
+    expect(deriveProjectStatus(progress, false)).toBe("Draft");
+  });
+
+  it("returns Components Selected once at least one component exists", () => {
+    const progress = getProjectProgress(
+      makeProject({ components: [makeComponent("flash", "Flash")] })
+    );
+    expect(deriveProjectStatus(progress, false)).toBe("Components Selected");
+  });
+
+  it("returns Connections Defined once at least one valid connection exists", () => {
+    const progress = getProjectProgress(
+      makeProject({
+        components: [
+          makeComponent("flash", "Flash"),
+          makeComponent("imu", "IMU")
+        ],
+        connections: [makeConnection("c-flash", "flash", "Valid")]
+      })
+    );
+    expect(deriveProjectStatus(progress, false)).toBe("Connections Defined");
+  });
+
+  it("returns Pin Mapping Incomplete when assignments need confirmation", () => {
+    const progress = getProjectProgress(
+      makeProject({
+        components: [makeComponent("flash", "Flash")],
+        connections: [makeConnection("c-flash", "flash", "Needs confirmation")]
+      })
+    );
+    expect(deriveProjectStatus(progress, false)).toBe("Pin Mapping Incomplete");
+  });
+
+  it("returns Has Conflicts when any step is blocked (pin conflict)", () => {
+    const progress = getProjectProgress(
+      makeProject({
+        components: [makeComponent("flash", "Flash")],
+        connections: [makeConnection("c-flash", "flash", "Conflict")]
+      })
+    );
+    expect(deriveProjectStatus(progress, false)).toBe("Has Conflicts");
+  });
+
+  it("returns Has Conflicts when validation has an error, even if other steps look fine", () => {
+    const progress = getProjectProgress(
+      makeProject({
+        components: [makeComponent("flash", "Flash")],
+        connections: [makeConnection("c-flash", "flash", "Valid")],
+        issues: [{ id: "i1", severity: "error", message: "Bad" }]
+      })
+    );
+    expect(deriveProjectStatus(progress, false)).toBe("Has Conflicts");
+  });
+
+  it("returns Ready to Generate when every step is complete but never exported", () => {
+    const project = makeProject({
+      components: [makeComponent("flash", "Flash")],
+      connections: [makeConnection("c-flash", "flash", "Valid")]
+    });
+    const progress = getProjectProgress(project, exportResultFor(project.id));
+    expect(progress.completedCount).toBe(progress.totalCount);
+    expect(deriveProjectStatus(progress, false)).toBe("Ready to Generate");
+  });
+
+  it("returns Generated when every step is complete and the project has been exported", () => {
+    const project = makeProject({
+      components: [makeComponent("flash", "Flash")],
+      connections: [makeConnection("c-flash", "flash", "Valid")]
+    });
+    const progress = getProjectProgress(project, exportResultFor(project.id));
+    expect(deriveProjectStatus(progress, true)).toBe("Generated");
+  });
+
+  it("hasExported is ignored when steps are not all complete", () => {
+    const progress = getProjectProgress(makeProject());
+    expect(deriveProjectStatus(progress, true)).toBe("Draft");
   });
 });
