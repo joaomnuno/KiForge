@@ -1,4 +1,8 @@
-import type { ProjectExportResult, WorkspaceProject } from "../../types/domain";
+import type {
+  ProjectExportResult,
+  ProjectStatus,
+  WorkspaceProject
+} from "../../types/domain";
 
 export type ProjectStepId =
   | "identity"
@@ -278,4 +282,56 @@ export function getProjectProgress(
     nextStepId: nextStep ? nextStep.id : null,
     percentComplete
   };
+}
+
+/**
+ * Derive the user-facing `ProjectStatus` badge from observable step
+ * progress (and whether the project has ever produced an export).
+ *
+ * Roadmap P0 mandates that status be derived from real state instead
+ * of the stored `ProjectDocument.status` value that earlier UI flows
+ * let users edit. Wire this in front of the stored field as the
+ * project list / cards migrate.
+ *
+ * Precedence:
+ *   any step blocked       → "Has Conflicts"
+ *   all 6 complete + export → "Generated"
+ *   all 6 complete          → "Ready to Generate"
+ *   pin-mapping attention   → "Pin Mapping Incomplete"
+ *   at least one connection → "Connections Defined"
+ *   at least one component  → "Components Selected"
+ *   otherwise               → "Draft"
+ */
+export function deriveProjectStatus(
+  progress: ProjectProgress,
+  hasExported: boolean
+): ProjectStatus {
+  const stepById = new Map(progress.steps.map((step) => [step.id, step]));
+  const hasBlocked = progress.steps.some((step) => step.status === "blocked");
+  if (hasBlocked) {
+    return "Has Conflicts";
+  }
+  const allComplete = progress.completedCount === progress.totalCount;
+  if (allComplete && hasExported) {
+    return "Generated";
+  }
+  if (allComplete) {
+    return "Ready to Generate";
+  }
+  if (stepById.get("pin-mapping")?.status === "attention") {
+    return "Pin Mapping Incomplete";
+  }
+  const connectionsStep = stepById.get("connections");
+  if (
+    connectionsStep &&
+    connectionsStep.status !== "empty" &&
+    connectionsStep.status !== "blocked"
+  ) {
+    return "Connections Defined";
+  }
+  const componentsStep = stepById.get("components");
+  if (componentsStep?.status === "complete") {
+    return "Components Selected";
+  }
+  return "Draft";
 }
