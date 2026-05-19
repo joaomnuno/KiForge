@@ -23,6 +23,9 @@ on:
       - ".gitattributes"
       - "LICENSE"
 
+permissions:
+  contents: read
+
 jobs:
   quality:
     strategy:
