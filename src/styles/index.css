@@ -819,6 +819,231 @@ button {
   accent-color: var(--primary);
 }
 
+.project-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--surface-dim);
+}
+
+.project-shell__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 28px;
+  background: rgba(28, 27, 27, 0.92);
+  border-bottom: 1px solid var(--outline-ghost);
+}
+
+.project-shell__identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.project-shell__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  color: var(--text-subtle);
+  background: rgba(53, 53, 52, 0.4);
+  font-size: 0.86rem;
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.project-shell__back:hover {
+  color: var(--text);
+  background: rgba(53, 53, 52, 0.72);
+  transform: translateY(-1px);
+}
+
+.project-shell__identity h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.project-shell__identity p {
+  margin: 4px 0 0;
+  color: var(--text-subtle);
+  font-size: 0.86rem;
+}
+
+.project-shell__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.project-shell__main {
+  flex: 1;
+  min-height: 0;
+  padding: 28px;
+  overflow: auto;
+}
+
+.progress-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  padding: 14px 28px;
+  background: rgba(19, 19, 19, 0.88);
+  border-bottom: 1px solid var(--outline-ghost);
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.progress-strip__overall {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(53, 53, 52, 0.5);
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.progress-strip__percent {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.progress-strip__overall-label {
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.progress-strip__steps {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.progress-strip__step {
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  flex: 1 1 auto;
+}
+
+.progress-strip__link {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  background: rgba(53, 53, 52, 0.3);
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
+  height: 100%;
+}
+
+.progress-strip__link:hover {
+  background: rgba(53, 53, 52, 0.6);
+  color: var(--text);
+}
+
+.progress-strip__link--active {
+  background: rgba(42, 42, 42, 1);
+  color: var(--primary);
+  outline: 1px solid rgba(102, 217, 204, 0.3);
+}
+
+.progress-strip__dot {
+  grid-row: 1 / span 2;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+  align-self: center;
+}
+
+.progress-strip__label {
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+
+.progress-strip__summary {
+  color: var(--text-subtle);
+  font-size: 0.76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progress-strip__step--complete .progress-strip__dot {
+  background: rgba(102, 217, 204, 0.95);
+}
+
+.progress-strip__step--attention .progress-strip__dot {
+  background: rgba(255, 200, 120, 0.95);
+}
+
+.progress-strip__step--empty .progress-strip__dot {
+  background: rgba(135, 147, 144, 0.6);
+}
+
+.progress-strip__step--blocked .progress-strip__dot {
+  background: rgba(255, 130, 120, 0.95);
+}
+
+.step-card {
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: rgba(28, 27, 27, 0.92);
+  padding: 22px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  outline: 1px solid transparent;
+  transition: outline-color 120ms ease;
+}
+
+.step-card--complete {
+  outline-color: rgba(102, 217, 204, 0.25);
+}
+
+.step-card--attention {
+  outline-color: rgba(255, 181, 156, 0.32);
+}
+
+.step-card--blocked {
+  outline-color: rgba(255, 180, 171, 0.32);
+}
+
+.step-card--empty {
+  outline-color: rgba(135, 147, 144, 0.18);
+}
+
 @media (max-width: 1200px) {
   .workspace--with-inspector {
     grid-template-columns: 1fr;

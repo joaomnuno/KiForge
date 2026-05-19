@@ -20,12 +20,17 @@ Each file describes:
 - [button-variants.md](./button-variants.md) — the three `<Button>` variants
   rendered by [src/components/ui/Button.tsx](../../src/components/ui/Button.tsx).
 
-## Layout chrome
+## Layout chrome — outer shell (Projects / Templates / Settings)
 
 - [topbar-new-project.md](./topbar-new-project.md)
 - [topbar-account-menu.md](./topbar-account-menu.md)
-- [project-strip-save.md](./project-strip-save.md)
 - [sidebar-nav-link.md](./sidebar-nav-link.md)
+
+## Layout chrome — project shell (any `/workspace/*` route)
+
+- [project-shell-back.md](./project-shell-back.md)
+- [project-shell-save.md](./project-shell-save.md)
+- [progress-strip-step.md](./progress-strip-step.md)
 
 ## Projects screen (`/projects`)
 
@@ -50,17 +55,20 @@ Each file describes:
 - [templates-use-template.md](./templates-use-template.md)
 - [templates-start-blank.md](./templates-start-blank.md)
 
+## Project overview screen (`/workspace/overview`)
+
+- [overview-resume.md](./overview-resume.md)
+- [overview-step-card-open.md](./overview-step-card-open.md)
+
 ## Components screen (`/workspace/components`)
 
-- [components-go-to-projects.md](./components-go-to-projects.md)
 - [components-category-pill.md](./components-category-pill.md)
 - [components-add.md](./components-add.md)
-- [components-continue-to-connections.md](./components-continue-to-connections.md)
+- [components-row-rename.md](./components-row-rename.md)
+- [components-row-remove.md](./components-row-remove.md)
 
 ## Connections screen (`/workspace/connections`)
 
-- [connections-go-to-projects.md](./connections-go-to-projects.md)
-- [connections-go-to-components.md](./connections-go-to-components.md)
 - [connections-auto-assign.md](./connections-auto-assign.md)
 - [connections-new-connection.md](./connections-new-connection.md)
 - [connections-device-navigator.md](./connections-device-navigator.md)
