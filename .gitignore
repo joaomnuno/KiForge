@@ -11,3 +11,13 @@ src-tauri/gen
 .idea
 .vscode
 .codex
+
+# Local AI agent overrides (shared instructions live in AGENTS.md / CLAUDE.md / .claude/)
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/tmp/
+.ai-scratch/
+
+# Caveman skills plugin cache (per-machine; not project artifacts)
+.agents/
+skills-lock.json
