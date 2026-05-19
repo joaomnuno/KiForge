@@ -1,175 +1,133 @@
 # KiForge Roadmap
 
-Last reviewed: 2026-05-14
+Last reviewed: 2026-05-19
 
-## Product Goal
+## Product goal
 
-KiForge is a Tauri v2 + React desktop workspace for planning hardware projects before KiCad. The MVP should help a user create a project, choose a controller, add devices, define logical connections, assign pins, inspect validation issues, and export a starter project bundle.
+KiForge is a Tauri v2 + React desktop workspace for planning hardware projects before opening KiCad. A user should be able to start a project, pick a controller, add devices, plan logical connections with explicit pin mapping, see validation issues surfaced, and export a starter project bundle — all without leaving the app and without committing to a schematic.
 
-## Current Baseline
+The first usable build (v0.1) targets one happy-path user: someone planning a small board around a supported MCU, using the curated catalog, exporting a JSON bundle they can hand off to their next tool.
 
-- React + Vite + TypeScript frontend with Tauri v2 desktop shell.
-- Filesystem-backed project CRUD in desktop mode.
-- Browser `localStorage` fallback for web preview.
-- JSON-backed local controller and component catalog.
-- Project, component, and connection pages wired to persisted workspace state.
-- Interactive connection planner with protocol selection, controller interface selection, shared-bus behavior, auto-assignment, saved edits, and derived validation.
-- Basic unit/component tests for app boot, catalog loading, browser persistence, and planner behavior.
+## Current baseline (post 2026-05-19 merge)
 
-## Known Gaps
+### Shell and navigation
 
-### P0: Safety and Release Blockers
+- Outer shell (`/projects`, `/templates`, `/settings`, `/projects/new`) renders with `AppScaffold` — sidebar + topbar + optional inspector.
+- Project shell (any `/workspace/*` route) renders with [ProjectShell](../src/features/workspace/ProjectShell.tsx) — its own header (project meta + Save + Back-to-Projects), a sticky [ProjectProgressStrip](../src/features/workspace/ProjectProgressStrip.tsx) with per-step status, and `<Outlet />` for the active step. Outer chrome is hidden inside the shell.
+- Account dropdown ([AccountMenu](../src/components/layout/AccountMenu.tsx)) replaces the static avatar.
 
-- Harden Tauri project id validation. Current backend checks only non-empty ids before building filesystem paths.
-- Add atomic project writes to reduce corruption risk.
-- Add backend schema/enum validation so malformed frontend data cannot be persisted blindly.
-- Replace `csp: null` with a real desktop CSP before release.
-- Make formatting gates pass: `npm run format:check` and `cargo fmt --check` currently fail.
+### Project lifecycle
 
-### P1: Export and MVP Usefulness
+- Filesystem-backed CRUD on desktop, `localStorage` fallback on web.
+- Project creation flow (with optional template pre-fill) — [NewProjectPage](../src/features/projects/NewProjectPage.tsx).
+- Curated [starter templates](../src/features/templates/templates-catalog.ts) at `/templates` that pre-select controller + voltage domain + suggested devices.
+- Settings store persisted to `localStorage` ([settings-store](../src/features/settings/settings-store.ts)) — display name, theme, default voltage / output target, behavior toggles.
+- Project list with All / Recent / Ready-to-generate filters, status legend, export-result toast.
 
-- Wire the existing desktop `export_project` command into the frontend service/store/UI.
-- Generate a starter output bundle, not only one project JSON file.
-- Include at minimum:
-  - project manifest
-  - controller summary
-  - component inventory/BOM
-  - connection table
-  - pin assignment report
-  - validation issue report
-- Make `Ready to Generate` and `Generated` statuses reachable through real validation/export state.
+### Workspace steps
 
-### P2: Planner and Validation Depth
+- **Overview** (`/workspace/overview`): [getProjectProgress](../src/features/projects/project-progress.ts) drives step cards (Identity / Components / Connections / Pin mapping / Validation / Export) with `complete` / `attention` / `empty` / `blocked` states and a "Resume {next step}" CTA. 11 unit tests cover step semantics.
+- **Components** (`/workspace/components`): catalog browser + project inventory panel with inline rename (commit on blur/Enter) and ghost Remove button. `removeComponentFromCurrentProject` also strips dependent connection records.
+- **Connections** (`/workspace/connections`): interactive planner with protocol selection, controller interface selection, dedicated/shared bus modes, signal-by-signal pin assignment, optional-signal toggles, auto-assign, project-level validation summary, and a planner-row breakdown of derived status.
 
-- Surface project-level issue summary in the workspace, not only draft-level issues.
-- Add validation for:
-  - voltage domain mismatches
-  - I2C address conflicts once catalog supports addresses
-  - boot/debug reserved pins
-  - controller alternate-function ambiguity
-  - missing optional-but-recommended signals
-- Improve planner UX:
-  - top validation counters
-  - validate action
-  - alerts panel
-  - package/pin preview
-  - pin usage progress
+### Backend
 
-### P3: Design Parity
+- Tauri 2.11.1 + tauri-build 2.6.2.
+- Hardened project id validation in [src-tauri/src/domain/project.rs](../src-tauri/src/domain/project.rs) (rejects path traversal, control chars, and unsafe characters).
+- Atomic project writes via temp-file + rename.
+- Backend schema/enum validation so malformed frontend data cannot be persisted.
+- Project export bundle (manifest + project document) covered by Rust tests.
 
-- Repo has static design exports under `design-files/*`, but no editable `.fig` or Figma URL.
-- Current UI partially follows design but misses:
-  - icon-driven nav/actions
-  - settings/help actions
-  - real search/filter behavior
-  - project add card and recent activity area
-  - BOM-style right rail on components page
-  - denser connection planner layout
-  - package preview and pin usage visualization
-  - bottom status strip
+### Build and CI
 
-### P4: Domain Model Growth
+- Frontend runs on Vite + TypeScript + React.
+- CI uses bun for frontend install + scripts; PR matrix covers Ubuntu / macOS / Windows for lint, format, typecheck, test, build, plus Rust fmt / clippy / tests.
+- Desktop bundle smoke step removed from PR CI — `release.yml` (manual `workflow_dispatch` or `app-v*` tag) owns bundling.
+- `.gitattributes` pins `text=auto eol=lf` so Windows checkouts don't trip prettier.
+- `bun.lock` is the canonical lockfile; `package-lock.json` removed.
 
-- Expand catalog schema with manufacturer part numbers, datasheets, footprints, package pin metadata, supply ranges, current estimates, and I2C addresses.
-- Add component instance editing: refdes, alias, protocol preference, notes, remove.
-- Add controller/package metadata needed for realistic pin previews and KiCad starter output.
-- Keep schematic editing out of scope until planner and export are stable.
+## Where we are honest about gaps
 
-## Parallel Engineer Split
+Some things look done in the UI but aren't actually wired up. These are intentional placeholders, not bugs to file separately — they're tracked in the priorities below.
 
-### Engineer A: Backend Safety and Export
+- Search inputs in the top toolbar (every page) accept input but do not filter anything.
+- "Theme" pills in Settings persist a preference but the app always renders dark.
+- "Sign out" in the account menu shows a notice that the app runs locally — no auth.
+- "Pin mapping" and "Validation" progress steps point at `/workspace/connections` and `/workspace/overview` respectively. They're not standalone screens yet.
+- "Export" progress step turns complete when an export result exists, but there's no in-shell export action — export still happens from the project card on `/projects`.
+- The project shell does not have a dedicated inspector slot, so the connections page renders its inspector panels inline above the planner.
 
-Ownership:
+## Priorities
 
-- `src-tauri/src/domain/project.rs`
-- `src-tauri/src/commands/projects.rs`
-- `src-tauri/src/lib.rs`
+### P0: Make the planner trustworthy
 
-Goals:
+These are the gaps where the app currently lies — looks like it's doing work but isn't.
 
-- Harden project id/path handling.
-- Add atomic project writes.
-- Expand export from one JSON file into a starter bundle.
-- Add Rust tests for path rejection, duplicate/export behavior, and manifest output.
+- Stand up a real export action inside the project shell, gated on `Ready to Generate` status, that re-uses the existing desktop bundle command and reflects success in the Export step card.
+- Make `Ready to Generate` / `Generated` statuses reachable from real state, not just from user-edited values. Status should be derived from `getProjectProgress` + last-export timestamp.
+- Add an inspector slot to `ProjectShell` and move the connection inspector panels into it. The current inline layout works but eats vertical real estate.
+- Replace `csp: null` in `src-tauri/tauri.conf.json` with a desktop-appropriate CSP before any signed release.
+- Edit project identity (description, controller, voltage domain) from inside the shell. Today only rename is reachable, and only from the project card.
 
-### Engineer B: Frontend Export Flow
+### P1: Validation depth
 
-Ownership:
+Right now validation tracks "unconnected device" and "conflicting pin assignment within one connection." That is not enough to call this a planner.
 
-- `src/features/projects/project-service.ts`
-- `src/features/projects/project-store.ts`
-- `src/features/projects/ProjectsPage.tsx`
-- `src/types/domain.ts`
+- Voltage domain mismatches between a device's supply requirements and the project's voltage domain.
+- I2C address conflicts once catalog entries carry addresses.
+- Boot / debug / strapping pin warnings on the chosen controller (reserved GPIOs that shouldn't be reassigned).
+- Controller alternate-function ambiguity (when a pin can serve multiple peripheral roles and we picked one implicitly).
+- Missing optional-but-recommended signals (reset on flash, INT on IMU, etc.) flagged at warning severity.
 
-Goals:
+### P2: Pin and package visualization
 
-- Add `exportProject` to the frontend service/store.
-- Expose export on project cards.
-- Show success/error state with exported path in desktop mode.
-- Keep browser fallback behavior explicit.
+The planner gets dramatically more useful when the user can see what the chip looks like.
 
-### Engineer C: Planner Validation UI
+- Package preview on the controller (QFP / QFN / BGA pinout with assigned signals annotated).
+- Pin usage progress meter (assigned vs available, per peripheral class).
+- Bottom status strip showing aggregate progress + last-save timestamp + export state.
+- Inline alerts panel surfaced from validation, with click-to-jump-to-the-relevant-step.
 
-Ownership:
+### P3: Catalog growth
 
-- `src/features/connections/ConnectionsPage.tsx`
-- `src/features/connections/planner.ts`
-- `src/features/connections/planner.test.ts`
+The MVP catalog is curated and intentional, but it's small.
 
-Goals:
+- Schema: manufacturer part numbers, datasheets, footprints, package pin metadata, supply ranges, current estimates, I2C addresses.
+- Tooling: a `catalog/validate` script so future contributions don't drift from the schema.
+- More controllers (ESP32-S3, STM32G0, RP2350) and more devices (display drivers, common power management ICs).
 
-- Add project-level validation summary on the connections page.
-- Add counters for connected devices, unresolved issues, conflicts, and optional signals.
-- Add tests for unresolved/missing/conflict summaries.
+### P4: Web-vs-desktop honesty
 
-### Engineer D: Design and Navigation Polish
+The frontend silently falls back to `localStorage` on web preview. That is fine for demos and wrong for anything real.
 
-Ownership:
+- Disable destructive workflows (export, save-to-disk) in web preview with a clear "desktop only" affordance instead of silent fallback.
+- Surface the runtime mode (already shown in the toolbar pill) in a more prominent place when in web preview, ideally with a single "Open desktop app" CTA.
 
-- `src/components/layout/*`
-- `src/components/ui/*`
-- `src/data/navigation.ts`
-- `src/styles/index.css`
-- `src/styles/tokens.css`
+## Out of scope for v0.1
 
-Goals:
+Tracked here so contributors don't quietly start them.
 
-- Bring app frame closer to static design exports.
-- Add icon-aware nav/action structure without making placeholder routes look real.
-- Tighten density, button radius, panel styling, and status-strip patterns.
-- Keep CSS responsive and avoid layout overlap.
+- Schematic editing inside KiForge. The contract is: plan in KiForge, hand the bundle to KiCad.
+- Multi-user / cloud projects. Persistence is local-only.
+- Real authentication. The account menu is decorative.
+- Theme variants beyond dark. Light mode and OS-following are P3 polish at the earliest.
 
-### Engineer E: CI and Formatting
+## Exit criteria for v0.1
 
-Ownership:
+- Open the app, create a project from blank or from a template.
+- Add devices from the catalog, name them, remove them.
+- Plan SPI / I2C / UART connections with explicit pin assignment, including shared-bus modes.
+- See `Ready to Generate` status reached from real validation, not from a manual edit.
+- Export a starter bundle (manifest + project JSON, with room for more files) to disk on desktop.
+- Land the changes in main with CI green across Ubuntu / macOS / Windows.
 
-- `.github/workflows/ci.yml`
-- `.github/workflows/release.yml`
-- `package.json`
-- `prettier.config.mjs`
-- `eslint.config.js`
-- docs under `docs/`
+## Delivery notes
 
-Goals:
+We have iterated through several rounds of parallel work (foundation / UI / shell). For the next round the cleaner split is by user-visible step rather than by file ownership:
 
-- Add Rust fmt, clippy, and cargo test to CI.
-- Decide whether design export HTML/Markdown should be formatted or ignored.
-- Make local `ci:check` match CI.
-- Document the quality gate.
+- **Validation work** stays on the connections + planner files.
+- **Identity + export polish** lives on the project shell + new export view.
+- **Package preview** is a new component and a new visual primitive; it can land independently.
+- **Catalog growth** is data + a schema validator; isolated from the rest.
 
-## Suggested Delivery Order
-
-1. Land P0 safety and clean gates first.
-2. Land export bundle plus frontend export action.
-3. Land planner validation summary and issue UX.
-4. Land design polish and navigation behavior.
-5. Expand catalog/domain model after export format stabilizes.
-
-## Exit Criteria for MVP
-
-- User can create/open/delete/duplicate projects in desktop mode.
-- User can add components from local catalog.
-- User can define SPI or I2C connections with explicit pin assignment.
-- User can see unresolved pins, conflicts, and project-level validation state.
-- User can export a starter bundle from desktop mode.
-- CI passes frontend checks, Rust checks, tests, and Tauri build smoke.
+When work cuts across these, batch it in a single PR rather than splitting for the sake of splitting — the merge cost of three-way splits with shared base ref drift is real.
