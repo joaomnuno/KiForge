@@ -35,8 +35,6 @@ The repository now has:
    - export a starter output folder structure
    - keep full KiCad generation out of scope until the planner is stable
 4. Tighten quality gates:
-   - switch CI from `npm install` to `npm ci`
-   - add Rust fmt, clippy, and tests
    - add desktop smoke tests once the connection flow is interactive
 
 ## Completed foundation

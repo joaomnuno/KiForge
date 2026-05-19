@@ -23,11 +23,16 @@ Install Rust:
 curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
 ```
 
+Install Bun (the project's package manager and JavaScript runtime):
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
 Confirm the toolchain:
 
 ```bash
-node --version
-npm --version
+bun --version
 cargo --version
 rustc --version
 ```
@@ -35,22 +40,22 @@ rustc --version
 ## Project bootstrap
 
 ```bash
-npm install
-npm run lint
-npm run test
-npm run dev
+bun install
+bun run lint
+bun run test
+bun run dev
 ```
 
 Run the native app:
 
 ```bash
-npm run tauri:dev
+bun run tauri:dev
 ```
 
 Build desktop bundles:
 
 ```bash
-npm run tauri:build
+bun run tauri:build
 ```
 
 ## Notes

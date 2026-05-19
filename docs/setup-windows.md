@@ -18,8 +18,8 @@ PowerShell:
 ```powershell
 winget install --id Rustlang.Rustup
 rustup default stable-msvc
-node --version
-npm --version
+powershell -c "irm bun.sh/install.ps1 | iex"
+bun --version
 cargo --version
 ```
 
@@ -28,22 +28,22 @@ cargo --version
 From the repository root:
 
 ```powershell
-npm install
-npm run lint
-npm run test
-npm run dev
+bun install
+bun run lint
+bun run test
+bun run dev
 ```
 
 Start the Tauri shell after Rust is available:
 
 ```powershell
-npm run tauri:dev
+bun run tauri:dev
 ```
 
 Create a production desktop build:
 
 ```powershell
-npm run tauri:build
+bun run tauri:build
 ```
 
 ## Notes
