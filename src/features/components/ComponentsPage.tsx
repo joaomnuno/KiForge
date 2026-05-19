@@ -24,7 +24,10 @@ export function ComponentsPage() {
   );
 
   const visibleEntries = useMemo(
-    () => catalog.components.filter((entry) => entry.categoryId === activeCategoryId),
+    () =>
+      catalog.components.filter(
+        (entry) => entry.categoryId === activeCategoryId
+      ),
     [activeCategoryId]
   );
 
@@ -179,7 +182,14 @@ function ProjectComponentRow({
         gap: "var(--space-sm, 0.75rem)"
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", minWidth: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.25rem",
+          minWidth: 0
+        }}
+      >
         <input
           className="field__control"
           disabled={isSaving}
@@ -194,7 +204,9 @@ function ProjectComponentRow({
           type="text"
           value={value}
         />
-        <span style={{ opacity: 0.7, fontSize: "0.875rem" }}>{component.partName}</span>
+        <span style={{ opacity: 0.7, fontSize: "0.875rem" }}>
+          {component.partName}
+        </span>
       </div>
       <StatusBadge label={component.status} />
       <Button

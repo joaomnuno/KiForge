@@ -11,7 +11,7 @@
   - **New project** → navigates to `/projects/new`
   - **Sign out** → shows an info dialog explaining the app runs locally and
     closes the menu.
-  The menu closes on outside click and on `Escape`.
+    The menu closes on outside click and on `Escape`.
 - **Disabled when**: Never.
 - **Why it exists**: Surfaces identity and quick navigation without taking
   toolbar space for many separate buttons.

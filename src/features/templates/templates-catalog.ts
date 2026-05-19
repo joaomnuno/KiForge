@@ -1,7 +1,4 @@
-import type {
-  OutputTarget,
-  VoltageDomain
-} from "../../types/domain";
+import type { OutputTarget, VoltageDomain } from "../../types/domain";
 
 export interface ProjectTemplate {
   id: string;

@@ -1,7 +1,4 @@
-import type {
-  ProjectExportResult,
-  WorkspaceProject
-} from "../../types/domain";
+import type { ProjectExportResult, WorkspaceProject } from "../../types/domain";
 
 export type ProjectStepId =
   | "identity"
@@ -11,11 +8,7 @@ export type ProjectStepId =
   | "validation"
   | "export";
 
-export type ProjectStepStatus =
-  | "complete"
-  | "attention"
-  | "empty"
-  | "blocked";
+export type ProjectStepStatus = "complete" | "attention" | "empty" | "blocked";
 
 export interface ProjectStepProgress {
   id: ProjectStepId;

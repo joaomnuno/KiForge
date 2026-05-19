@@ -25,18 +25,9 @@ export function App() {
             path="/workspace"
             element={<Navigate to="/workspace/overview" replace />}
           />
-          <Route
-            path="/workspace/overview"
-            element={<ProjectOverviewPage />}
-          />
-          <Route
-            path="/workspace/components"
-            element={<ComponentsPage />}
-          />
-          <Route
-            path="/workspace/connections"
-            element={<ConnectionsPage />}
-          />
+          <Route path="/workspace/overview" element={<ProjectOverviewPage />} />
+          <Route path="/workspace/components" element={<ComponentsPage />} />
+          <Route path="/workspace/connections" element={<ConnectionsPage />} />
         </Route>
       </Routes>
     </HashRouter>

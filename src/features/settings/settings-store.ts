@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type {
-  OutputTarget,
-  VoltageDomain
-} from "../../types/domain";
+import type { OutputTarget, VoltageDomain } from "../../types/domain";
 
 export type ThemePreference = "Dark" | "System" | "Light";
 
@@ -41,7 +38,8 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       ...DEFAULTS,
-      updateSetting: (key, value) => set({ [key]: value } as Partial<AppSettings>),
+      updateSetting: (key, value) =>
+        set({ [key]: value } as Partial<AppSettings>),
       resetSettings: () => set({ ...DEFAULTS })
     }),
     {

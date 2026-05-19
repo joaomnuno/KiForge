@@ -9,7 +9,9 @@ export function ProjectShell() {
   const currentProject = useWorkspaceStore((state) => state.currentProject);
   const isSaving = useWorkspaceStore((state) => state.isSaving);
   const exportResult = useWorkspaceStore((state) => state.exportResult);
-  const saveCurrentProject = useWorkspaceStore((state) => state.saveCurrentProject);
+  const saveCurrentProject = useWorkspaceStore(
+    (state) => state.saveCurrentProject
+  );
 
   if (currentProject == null) {
     return <Navigate to="/projects" replace />;
@@ -27,7 +29,8 @@ export function ProjectShell() {
           <div>
             <h1>{currentProject.name}</h1>
             <p>
-              {currentProject.controller.name} &middot; {currentProject.voltageDomain} domain
+              {currentProject.controller.name} &middot;{" "}
+              {currentProject.voltageDomain} domain
             </p>
           </div>
         </div>

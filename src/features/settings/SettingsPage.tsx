@@ -4,10 +4,7 @@ import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { getRuntimeLabel } from "../../lib/runtime";
 import { outputTargets, voltageDomains } from "../../types/domain";
-import {
-  useSettingsStore,
-  type ThemePreference
-} from "./settings-store";
+import { useSettingsStore, type ThemePreference } from "./settings-store";
 
 const themeOptions: readonly ThemePreference[] = ["Dark", "System", "Light"];
 
@@ -110,9 +107,7 @@ export function SettingsPage() {
               <span>Email</span>
               <input
                 className="field__control"
-                onChange={(event) =>
-                  updateSetting("email", event.target.value)
-                }
+                onChange={(event) => updateSetting("email", event.target.value)}
                 type="email"
                 value={settings.email}
               />

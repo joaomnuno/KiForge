@@ -10,8 +10,8 @@
   - **Recent** — top 5 by `updatedAt` descending.
   - **Ready to generate** — only projects whose status is
     `"Ready to Generate"`.
-  When the filtered list is empty (but the store has projects), an empty
-  panel is shown with a "Show all projects" recovery button.
+    When the filtered list is empty (but the store has projects), an empty
+    panel is shown with a "Show all projects" recovery button.
 - **Disabled when**: Never.
 - **Why it exists**: Lets the user slice their projects without navigating
   away. The previous implementation rendered the pills with no handler and

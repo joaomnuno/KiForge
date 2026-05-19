@@ -14,7 +14,7 @@ export function ProjectOverviewPage() {
 
   const progress = getProjectProgress(currentProject, exportResult);
   const nextStep = progress.nextStepId
-    ? progress.steps.find((step) => step.id === progress.nextStepId) ?? null
+    ? (progress.steps.find((step) => step.id === progress.nextStepId) ?? null)
     : null;
 
   const errorCount = currentProject.issues.filter(
@@ -30,7 +30,9 @@ export function ProjectOverviewPage() {
       <Panel
         eyebrow="Project overview"
         title={currentProject.name}
-        description={currentProject.description || "No project description yet."}
+        description={
+          currentProject.description || "No project description yet."
+        }
         headerActions={<StatusBadge label={currentProject.status} />}
       >
         {nextStep ? (

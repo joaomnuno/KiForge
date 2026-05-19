@@ -18,7 +18,9 @@ export function ProjectProgressStrip({ progress }: ProjectProgressStripProps) {
   return (
     <nav className="progress-strip" aria-label="Project progress">
       <div className="progress-strip__overall">
-        <span className="progress-strip__percent">{progress.percentComplete}%</span>
+        <span className="progress-strip__percent">
+          {progress.percentComplete}%
+        </span>
         <span className="progress-strip__overall-label">
           {progress.completedCount} of {progress.totalCount} done
         </span>
