@@ -3,7 +3,7 @@
 First slice of the KiCad import/export path used by the project-bundle
 exporter (see roadmap P0: "real export action inside the project shell").
 
-## Scope (this slice)
+## Scope
 
 - `sexpr.ts` — tokenizer + recursive-descent parser for KiCad's
   S-expression dialect (`.kicad_sch`, `.kicad_sym`, `.kicad_pcb`,
@@ -11,10 +11,11 @@ exporter (see roadmap P0: "real export action inside the project shell").
 - `kicad-pro.ts` — typed reader for `.kicad_pro` (JSON since KiCad 6.0).
   Validates the minimum top-level shape KiForge needs to identify a
   project file; rest is pass-through.
-
-The AST is read-only data. A serializer (writer) is intentionally **not**
-included yet — first ship parse + tests so we can build the exporter on
-top with confidence the round-trip data model is right.
+- `builder.ts` — node constructors (`atom`, `str`, `list`, `keywordList`)
+  plus `schematicHeader` sugar for assembling an AST from project state.
+- `stringify.ts` — KiCad-style serializer (tab indent, single-line for
+  leaf-only lists, head-on-opening-paren multi-line for nested lists).
+  Round-trips through `parse` for any AST.
 
 ## Out of scope (deferred)
 
@@ -25,7 +26,8 @@ top with confidence the round-trip data model is right.
   works on all of them — semantic layers are added per format on demand.
 - Legacy formats (`.sch`, `.lib`, `.net`). KiCad 5 and earlier; not
   produced by KiCad 6+, not in the roadmap.
-- Writing/serializing back to disk. Comes with the exporter PR.
+- Writing bytes to disk. `stringify` produces the bytes; the Tauri
+  command that persists them lives in the next PR.
 - Rust port. Stays TypeScript until profiling shows a bottleneck — the
   Tauri command surface can call into TS-produced bytes just as well.
 
