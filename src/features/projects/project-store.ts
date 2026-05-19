@@ -46,6 +46,13 @@ interface WorkspaceState extends WorkspaceSnapshot {
   deleteProject: (projectId: string) => Promise<void>;
   exportProject: (projectId: string) => Promise<ProjectExportResult | null>;
   addComponentToCurrentProject: (catalogId: string) => Promise<void>;
+  removeComponentFromCurrentProject: (
+    projectComponentId: string
+  ) => Promise<void>;
+  renameComponentInCurrentProject: (
+    projectComponentId: string,
+    instanceName: string
+  ) => Promise<void>;
   saveConnectionToCurrentProject: (
     connection: ConnectionRecord
   ) => Promise<void>;
@@ -417,6 +424,62 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       await persistProjectDocument(set, {
         ...currentProjectDocument,
         components: [...currentProjectDocument.components, nextComponent]
+      });
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  async removeComponentFromCurrentProject(projectComponentId) {
+    const currentProjectDocument = get().currentProjectDocument;
+    if (!currentProjectDocument) {
+      return;
+    }
+
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      await persistProjectDocument(set, {
+        ...currentProjectDocument,
+        components: currentProjectDocument.components.filter(
+          (candidate) => candidate.id !== projectComponentId
+        ),
+        connections: currentProjectDocument.connections.filter(
+          (connection) => connection.componentId !== projectComponentId
+        )
+      });
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  async renameComponentInCurrentProject(projectComponentId, instanceName) {
+    const trimmedName = instanceName.trim();
+    if (!trimmedName) {
+      return;
+    }
+
+    const currentProjectDocument = get().currentProjectDocument;
+    if (!currentProjectDocument) {
+      return;
+    }
+
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      await persistProjectDocument(set, {
+        ...currentProjectDocument,
+        components: currentProjectDocument.components.map((candidate) =>
+          candidate.id === projectComponentId
+            ? { ...candidate, instanceName: trimmedName }
+            : candidate
+        )
       });
     } catch (error) {
       set({
