@@ -4,7 +4,8 @@ import {
   autoAssignDraft,
   buildConnectionDraft,
   buildConnectionRecordFromDraft,
-  getInterfaceOptions
+  getInterfaceOptions,
+  getProjectValidationSummary
 } from "./planner";
 import type { ProjectDocument } from "../../types/domain";
 
@@ -43,7 +44,9 @@ function makeProjectDocument(): ProjectDocument {
 
 describe("connection planner", () => {
   it("auto-assigns a dedicated SPI connection deterministically", () => {
-    const workspace = resolveProjectDocument(applyDerivedProjectState(makeProjectDocument()));
+    const workspace = resolveProjectDocument(
+      applyDerivedProjectState(makeProjectDocument())
+    );
     const initialDraft = buildConnectionDraft(workspace, "flash");
 
     expect(initialDraft).not.toBeNull();
@@ -55,7 +58,10 @@ describe("connection planner", () => {
       busMode: "Dedicated"
     });
 
-    const connection = buildConnectionRecordFromDraft(workspace, configuredDraft);
+    const connection = buildConnectionRecordFromDraft(
+      workspace,
+      configuredDraft
+    );
 
     expect(connection?.assignments).toEqual([
       {
@@ -105,14 +111,19 @@ describe("connection planner", () => {
 
   it("reuses shared SPI bus pins and blocks dedicated reuse", () => {
     const project = makeProjectDocument();
-    const baseWorkspace = resolveProjectDocument(applyDerivedProjectState(project));
+    const baseWorkspace = resolveProjectDocument(
+      applyDerivedProjectState(project)
+    );
     const flashDraft = autoAssignDraft(baseWorkspace, {
       ...buildConnectionDraft(baseWorkspace, "flash")!,
       protocol: "SPI",
       controllerInterface: "SPI1",
       busMode: "Shared"
     });
-    const flashConnection = buildConnectionRecordFromDraft(baseWorkspace, flashDraft)!;
+    const flashConnection = buildConnectionRecordFromDraft(
+      baseWorkspace,
+      flashDraft
+    )!;
 
     const withFlashWorkspace = resolveProjectDocument(
       applyDerivedProjectState({
@@ -122,7 +133,9 @@ describe("connection planner", () => {
     );
 
     const spiInterfaces = getInterfaceOptions(withFlashWorkspace, "SPI");
-    expect(spiInterfaces.find((option) => option.name === "SPI1")).toMatchObject({
+    expect(
+      spiInterfaces.find((option) => option.name === "SPI1")
+    ).toMatchObject({
       allowsDedicated: false,
       allowsShared: true,
       disabled: false
@@ -134,11 +147,155 @@ describe("connection planner", () => {
       controllerInterface: "SPI1",
       busMode: "Shared"
     });
-    const imuConnection = buildConnectionRecordFromDraft(withFlashWorkspace, imuDraft);
+    const imuConnection = buildConnectionRecordFromDraft(
+      withFlashWorkspace,
+      imuDraft
+    );
 
     expect(imuConnection?.assignments[0]?.selectedPin).toBe("PA5");
     expect(imuConnection?.assignments[1]?.selectedPin).toBe("PA6");
     expect(imuConnection?.assignments[2]?.selectedPin).toBe("PA7");
     expect(imuConnection?.assignments[3]?.selectedPin).toBe("PB1");
+  });
+
+  it("summarizes connected devices and clean validation state", () => {
+    const project = makeProjectDocument();
+    const baseWorkspace = resolveProjectDocument(
+      applyDerivedProjectState(project)
+    );
+    const flashDraft = autoAssignDraft(baseWorkspace, {
+      ...buildConnectionDraft(baseWorkspace, "flash")!,
+      protocol: "SPI",
+      controllerInterface: "SPI1",
+      busMode: "Dedicated"
+    });
+    const flashConnection = buildConnectionRecordFromDraft(
+      baseWorkspace,
+      flashDraft
+    )!;
+    const withFlashWorkspace = resolveProjectDocument(
+      applyDerivedProjectState({
+        ...project,
+        connections: [flashConnection]
+      })
+    );
+    const imuDraft = autoAssignDraft(withFlashWorkspace, {
+      ...buildConnectionDraft(withFlashWorkspace, "imu")!,
+      protocol: "SPI",
+      controllerInterface: "SPI2",
+      busMode: "Dedicated"
+    });
+    const imuConnection = buildConnectionRecordFromDraft(
+      withFlashWorkspace,
+      imuDraft
+    )!;
+
+    const derivedProject = applyDerivedProjectState({
+      ...project,
+      connections: [flashConnection, imuConnection]
+    });
+
+    expect(getProjectValidationSummary(derivedProject)).toEqual({
+      totalDevices: 2,
+      connectedDevices: 2,
+      savedConnections: 2,
+      unresolvedIssues: 0,
+      errorConflicts: 0,
+      warningCount: 0,
+      optionalSignalCount: 0,
+      optionalUnresolved: 0
+    });
+  });
+
+  it("summarizes missing required assignments and optional unresolved warnings", () => {
+    const project = makeProjectDocument();
+    const workspace = resolveProjectDocument(applyDerivedProjectState(project));
+    const incompleteRequiredDraft = autoAssignDraft(workspace, {
+      ...buildConnectionDraft(workspace, "flash")!,
+      protocol: "SPI",
+      controllerInterface: "SPI1",
+      busMode: "Dedicated",
+      enabledOptionalSignals: ["HOLD"]
+    });
+    const flashConnection = buildConnectionRecordFromDraft(workspace, {
+      ...incompleteRequiredDraft,
+      assignments: {
+        ...incompleteRequiredDraft.assignments,
+        MISO: "",
+        HOLD: ""
+      }
+    })!;
+    const derivedProject = applyDerivedProjectState({
+      ...project,
+      connections: [flashConnection]
+    });
+
+    expect(getProjectValidationSummary(derivedProject)).toEqual({
+      totalDevices: 2,
+      connectedDevices: 0,
+      savedConnections: 1,
+      unresolvedIssues: 3,
+      errorConflicts: 0,
+      warningCount: 1,
+      optionalSignalCount: 1,
+      optionalUnresolved: 1
+    });
+  });
+
+  it("summarizes saved pin conflicts from derived issues", () => {
+    const project = makeProjectDocument();
+    const baseWorkspace = resolveProjectDocument(
+      applyDerivedProjectState(project)
+    );
+    const flashDraft = autoAssignDraft(baseWorkspace, {
+      ...buildConnectionDraft(baseWorkspace, "flash")!,
+      protocol: "SPI",
+      controllerInterface: "SPI1",
+      busMode: "Dedicated"
+    });
+    const flashConnection = buildConnectionRecordFromDraft(
+      baseWorkspace,
+      flashDraft
+    )!;
+    const flashChipSelect = flashConnection.assignments.find(
+      (assignment) => assignment.signal === "CS"
+    )?.selectedPin;
+    const withFlashWorkspace = resolveProjectDocument(
+      applyDerivedProjectState({
+        ...project,
+        connections: [flashConnection]
+      })
+    );
+    const imuDraft = autoAssignDraft(withFlashWorkspace, {
+      ...buildConnectionDraft(withFlashWorkspace, "imu")!,
+      protocol: "SPI",
+      controllerInterface: "SPI2",
+      busMode: "Dedicated"
+    });
+    const conflictingImuConnection = buildConnectionRecordFromDraft(
+      withFlashWorkspace,
+      {
+        ...imuDraft,
+        assignments: {
+          ...imuDraft.assignments,
+          CS: flashChipSelect ?? ""
+        }
+      }
+    )!;
+    const derivedProject = applyDerivedProjectState({
+      ...project,
+      connections: [flashConnection, conflictingImuConnection]
+    });
+
+    expect(getProjectValidationSummary(derivedProject)).toEqual({
+      totalDevices: 2,
+      connectedDevices: 0,
+      savedConnections: 2,
+      unresolvedIssues: 2,
+      errorConflicts: 2,
+      warningCount: 0,
+      optionalSignalCount: 0,
+      optionalUnresolved: 0
+    });
   });
 });

@@ -10,8 +10,12 @@ export interface ProjectService {
   loadProject: (projectId: string) => Promise<ProjectDocument>;
   saveProject: (project: ProjectDocument) => Promise<ProjectDocument>;
   renameProject: (projectId: string, name: string) => Promise<ProjectDocument>;
-  duplicateProject: (projectId: string, name?: string) => Promise<ProjectDocument>;
+  duplicateProject: (
+    projectId: string,
+    name?: string
+  ) => Promise<ProjectDocument>;
   deleteProject: (projectId: string) => Promise<void>;
+  exportProject: (projectId: string) => Promise<string>;
 }
 
 function slugify(value: string) {
@@ -62,6 +66,11 @@ function writeBrowserProjects(projects: ProjectDocument[]) {
   storage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(projects));
 }
 
+function makeProjectDataUrl(project: ProjectDocument) {
+  const serializedProject = JSON.stringify(project, null, 2);
+  return `data:application/json;charset=utf-8,${encodeURIComponent(serializedProject)}`;
+}
+
 function makeUniqueProjectId(existingIds: string[], name: string) {
   const baseId = slugify(name);
   let candidateId = baseId;
@@ -109,7 +118,9 @@ const browserProjectService: ProjectService = {
   },
 
   async loadProject(projectId) {
-    const project = readBrowserProjects().find((candidate) => candidate.id === projectId);
+    const project = readBrowserProjects().find(
+      (candidate) => candidate.id === projectId
+    );
     if (!project) {
       throw new Error(`Project "${projectId}" was not found.`);
     }
@@ -127,7 +138,9 @@ const browserProjectService: ProjectService = {
       updatedAt: getTimestamp()
     };
 
-    const nextProjects = projects.some((candidate) => candidate.id === project.id)
+    const nextProjects = projects.some(
+      (candidate) => candidate.id === project.id
+    )
       ? projects.map((candidate) =>
           candidate.id === project.id ? nextProject : candidate
         )
@@ -170,6 +183,11 @@ const browserProjectService: ProjectService = {
     writeBrowserProjects(
       projects.filter((candidate) => candidate.id !== projectId)
     );
+  },
+
+  async exportProject(projectId) {
+    const project = await browserProjectService.loadProject(projectId);
+    return makeProjectDataUrl(project);
   }
 };
 
@@ -217,6 +235,10 @@ const tauriProjectService: ProjectService = {
 
   async deleteProject(projectId) {
     await invokeTauri("delete_project", { projectId });
+  },
+
+  async exportProject(projectId) {
+    return invokeTauri<string>("export_project", { projectId });
   }
 };
 

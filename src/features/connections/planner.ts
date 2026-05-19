@@ -57,6 +57,25 @@ export interface DraftSignalRow {
   candidates: PinCandidate[];
 }
 
+export interface ProjectValidationSummary {
+  totalDevices: number;
+  connectedDevices: number;
+  savedConnections: number;
+  unresolvedIssues: number;
+  errorConflicts: number;
+  warningCount: number;
+  optionalSignalCount: number;
+  optionalUnresolved: number;
+}
+
+interface ProjectValidationSummarySource {
+  components: Array<Pick<ProjectDocument["components"][number], "status">>;
+  connections: Array<
+    Pick<ProjectDocument["connections"][number], "optionalSignals">
+  >;
+  issues: ValidationIssue[];
+}
+
 interface PinUsage {
   pin: string;
   signal: string;
@@ -116,7 +135,9 @@ function getProtocolSpec(protocol: PlannerProtocol) {
 }
 
 function asPlannerProtocol(
-  protocol: ConnectionRecord["protocol"] | WorkspaceProjectComponent["preferredProtocol"]
+  protocol:
+    | ConnectionRecord["protocol"]
+    | WorkspaceProjectComponent["preferredProtocol"]
 ): PlannerProtocol | undefined {
   return protocol && protocol in protocolSpecs
     ? (protocol as PlannerProtocol)
@@ -127,12 +148,19 @@ function getComponent(project: WorkspaceProject, componentId: string) {
   return project.components.find((component) => component.id === componentId);
 }
 
-function getConnectionForComponent(project: WorkspaceProject, componentId: string) {
-  return project.connections.find((connection) => connection.componentId === componentId);
+function getConnectionForComponent(
+  project: WorkspaceProject,
+  componentId: string
+) {
+  return project.connections.find(
+    (connection) => connection.componentId === componentId
+  );
 }
 
 function getAssignmentsMap(assignments: SignalAssignment[]) {
-  return Object.fromEntries(assignments.map((assignment) => [assignment.signal, assignment.selectedPin]));
+  return Object.fromEntries(
+    assignments.map((assignment) => [assignment.signal, assignment.selectedPin])
+  );
 }
 
 export function getCompatibleProtocolOptions(
@@ -178,7 +206,8 @@ export function getInterfaceOptions(
         return {
           name: controllerInterface.name,
           protocol,
-          description: "Unused interface ready for a dedicated connection or an explicitly shared bus.",
+          description:
+            "Unused interface ready for a dedicated connection or an explicitly shared bus.",
           usageLabel: "Unused",
           disabled: false,
           allowsDedicated: true,
@@ -186,11 +215,14 @@ export function getInterfaceOptions(
         };
       }
 
-      const otherNames = otherConnections.map((connection) => connection.name).join(", ");
+      const otherNames = otherConnections
+        .map((connection) => connection.name)
+        .join(", ");
       const allShared =
         spec.supportsSharedBus &&
         otherConnections.every(
-          (connection) => connection.protocol === protocol && connection.busMode === "Shared"
+          (connection) =>
+            connection.protocol === protocol && connection.busMode === "Shared"
         );
 
       if (allShared) {
@@ -232,11 +264,15 @@ export function getAvailableOptionalSignals(
   }
 
   return (
-    findComponentConnectionOption(component.part, protocol)?.optionalSignals ?? []
+    findComponentConnectionOption(component.part, protocol)?.optionalSignals ??
+    []
   );
 }
 
-function getSignalDefinitions(project: WorkspaceProject, draft: ConnectionDraft) {
+function getSignalDefinitions(
+  project: WorkspaceProject,
+  draft: ConnectionDraft
+) {
   if (!draft.protocol) {
     return [];
   }
@@ -247,9 +283,11 @@ function getSignalDefinitions(project: WorkspaceProject, draft: ConnectionDraft)
   }
 
   const requiredSignals = getProtocolSpec(draft.protocol).requiredSignals;
-  const optionalSignals = getAvailableOptionalSignals(project, draft.componentId, draft.protocol).filter(
-    (signal) => draft.enabledOptionalSignals.includes(signal.name)
-  );
+  const optionalSignals = getAvailableOptionalSignals(
+    project,
+    draft.componentId,
+    draft.protocol
+  ).filter((signal) => draft.enabledOptionalSignals.includes(signal.name));
 
   return [
     ...requiredSignals.map((signal) => ({ ...signal, optional: false })),
@@ -283,23 +321,34 @@ export function buildConnectionDraft(
     existingConnection?.id
   );
   const chosenInterface =
-    interfaceOptions.find((option) => option.name === existingConnection?.controllerInterface && !option.disabled)
-      ?.name ??
+    interfaceOptions.find(
+      (option) =>
+        option.name === existingConnection?.controllerInterface &&
+        !option.disabled
+    )?.name ??
     interfaceOptions.find((option) => !option.disabled)?.name ??
     interfaceOptions[0]?.name ??
     "";
 
-  const matchingInterface = interfaceOptions.find((option) => option.name === chosenInterface);
+  const matchingInterface = interfaceOptions.find(
+    (option) => option.name === chosenInterface
+  );
   const allowedBusModes = getAllowedBusModes(matchingInterface);
   const chosenBusMode =
     existingConnection && allowedBusModes.includes(existingConnection.busMode)
       ? existingConnection.busMode
-      : allowedBusModes[0] ?? "Dedicated";
+      : (allowedBusModes[0] ?? "Dedicated");
 
-  const optionalSignals = getAvailableOptionalSignals(project, componentId, preferredProtocol);
+  const optionalSignals = getAvailableOptionalSignals(
+    project,
+    componentId,
+    preferredProtocol
+  );
   const enabledOptionalSignals = optionalSignals
     .filter((signal) =>
-      existingConnection?.assignments.some((assignment) => assignment.signal === signal.name)
+      existingConnection?.assignments.some(
+        (assignment) => assignment.signal === signal.name
+      )
     )
     .map((signal) => signal.name);
 
@@ -310,7 +359,9 @@ export function buildConnectionDraft(
     controllerInterface: chosenInterface,
     busMode: chosenBusMode,
     enabledOptionalSignals,
-    assignments: existingConnection ? getAssignmentsMap(existingConnection.assignments) : {}
+    assignments: existingConnection
+      ? getAssignmentsMap(existingConnection.assignments)
+      : {}
   });
 }
 
@@ -325,8 +376,8 @@ export function normalizeConnectionDraft(
 
   const compatibleProtocols = getCompatibleProtocolOptions(project, component);
   const normalizedProtocol =
-    compatibleProtocols.find((option) => option.protocol === draft.protocol)?.protocol ??
-    compatibleProtocols[0]?.protocol;
+    compatibleProtocols.find((option) => option.protocol === draft.protocol)
+      ?.protocol ?? compatibleProtocols[0]?.protocol;
 
   if (!normalizedProtocol) {
     return {
@@ -364,17 +415,22 @@ export function normalizeConnectionDraft(
     draft.componentId,
     normalizedProtocol
   );
-  const normalizedOptionalSignals = draft.enabledOptionalSignals.filter((signalName) =>
-    availableOptionalSignals.some((signal) => signal.name === signalName)
+  const normalizedOptionalSignals = draft.enabledOptionalSignals.filter(
+    (signalName) =>
+      availableOptionalSignals.some((signal) => signal.name === signalName)
   );
   const knownSignals = new Set(
     [
-      ...getProtocolSpec(normalizedProtocol).requiredSignals.map((signal) => signal.name),
+      ...getProtocolSpec(normalizedProtocol).requiredSignals.map(
+        (signal) => signal.name
+      ),
       ...normalizedOptionalSignals
     ].values()
   );
   const normalizedAssignments = Object.fromEntries(
-    Object.entries(draft.assignments).filter(([signal]) => knownSignals.has(signal))
+    Object.entries(draft.assignments).filter(([signal]) =>
+      knownSignals.has(signal)
+    )
   );
 
   return {
@@ -403,7 +459,10 @@ export function getAllowedBusModes(interfaceOption?: InterfaceOption) {
   return busModes;
 }
 
-function getPinUsages(project: WorkspaceProject, existingConnectionId?: string) {
+function getPinUsages(
+  project: WorkspaceProject,
+  existingConnectionId?: string
+) {
   return project.connections.flatMap<PinUsage>((connection) => {
     if (connection.id === existingConnectionId) {
       return [];
@@ -448,13 +507,18 @@ function getBaseCandidatePins(
     return project.controller.gpioPins;
   }
 
-  const controllerInterface = findControllerInterface(project.controller, draft.controllerInterface);
+  const controllerInterface = findControllerInterface(
+    project.controller,
+    draft.controllerInterface
+  );
   if (!controllerInterface) {
     return [];
   }
 
   return (
-    controllerInterface.signalPins.find((signalPins) => signalPins.signal === signal.name)?.pins ?? []
+    controllerInterface.signalPins.find(
+      (signalPins) => signalPins.signal === signal.name
+    )?.pins ?? []
   );
 }
 
@@ -579,7 +643,9 @@ export function autoAssignDraft(
   for (const signal of getSignalDefinitions(project, nextDraft)) {
     const candidates = getPinCandidates(project, nextDraft, signal);
     const currentPin = nextDraft.assignments[signal.name];
-    const currentCandidate = candidates.find((candidate) => candidate.pin === currentPin);
+    const currentCandidate = candidates.find(
+      (candidate) => candidate.pin === currentPin
+    );
 
     if (currentCandidate && currentCandidate.state !== "conflict") {
       continue;
@@ -619,7 +685,9 @@ export function buildConnectionRecordFromDraft(
   const optionalSignals = rows
     .filter((row) => row.optional)
     .map((row) =>
-      row.selectedPin ? `${row.signal} -> ${row.selectedPin}` : `${row.signal} not assigned`
+      row.selectedPin
+        ? `${row.signal} -> ${row.selectedPin}`
+        : `${row.signal} not assigned`
     );
 
   return {
@@ -653,10 +721,16 @@ function buildDraftFromConnection(
     return null;
   }
 
-  const optionalSignals = getAvailableOptionalSignals(project, component.id, protocol);
+  const optionalSignals = getAvailableOptionalSignals(
+    project,
+    component.id,
+    protocol
+  );
   const enabledOptionalSignals = optionalSignals
     .filter((signal) =>
-      connection.assignments.some((assignment) => assignment.signal === signal.name)
+      connection.assignments.some(
+        (assignment) => assignment.signal === signal.name
+      )
     )
     .map((signal) => signal.name);
 
@@ -756,6 +830,35 @@ export function getDraftIssues(
   return buildConnectionIssues(project, component, connection, rows);
 }
 
+export function getProjectValidationSummary(
+  project: ProjectValidationSummarySource
+): ProjectValidationSummary {
+  const errorConflicts = project.issues.filter(
+    (issue) => issue.severity === "error" && issue.id.endsWith("-conflict")
+  ).length;
+  const warningIssues = project.issues.filter(
+    (issue) => issue.severity === "warning"
+  );
+
+  return {
+    totalDevices: project.components.length,
+    connectedDevices: project.components.filter(
+      (component) => component.status === "Connected"
+    ).length,
+    savedConnections: project.connections.length,
+    unresolvedIssues: project.issues.length,
+    errorConflicts,
+    warningCount: warningIssues.length,
+    optionalSignalCount: project.connections.reduce(
+      (count, connection) => count + connection.optionalSignals.length,
+      0
+    ),
+    optionalUnresolved: warningIssues.filter((issue) =>
+      issue.id.endsWith("-missing")
+    ).length
+  };
+}
+
 function deriveProjectStatus(
   project: ProjectDocument,
   issues: ValidationIssue[]
@@ -818,7 +921,9 @@ export function applyDerivedProjectState(project: ProjectDocument) {
     }
 
     const rows = getDraftSignalRows(workspace, draft);
-    issues.push(...buildConnectionIssues(workspace, component, rebuiltConnection, rows));
+    issues.push(
+      ...buildConnectionIssues(workspace, component, rebuiltConnection, rows)
+    );
     return rebuiltConnection;
   });
 

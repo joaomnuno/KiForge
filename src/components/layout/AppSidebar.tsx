@@ -38,8 +38,8 @@ export function AppSidebar({ items, activeKey }: AppSidebarProps) {
       </nav>
 
       <div className="sidebar__footer">
-        <p className="sidebar__caption">MVP scaffold</p>
-        <p className="sidebar__support">Native target: Windows, macOS, Linux</p>
+        <p className="sidebar__caption">Desktop workspace</p>
+        <p className="sidebar__support">Windows, macOS, Linux</p>
       </div>
     </aside>
   );

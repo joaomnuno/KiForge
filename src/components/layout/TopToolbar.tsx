@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { getRuntimeLabel } from "../../lib/runtime";
+import { AccountMenu } from "./AccountMenu";
 
 interface TopToolbarProps {
   searchPlaceholder: string;
@@ -25,7 +26,7 @@ export function TopToolbar({ searchPlaceholder }: TopToolbarProps) {
         <Link className="button button--primary" to="/projects/new">
           New Project
         </Link>
-        <div className="avatar">JN</div>
+        <AccountMenu />
       </div>
     </header>
   );

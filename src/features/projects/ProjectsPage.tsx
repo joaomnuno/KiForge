@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AppScaffold } from "../../components/layout/AppScaffold";
 import { Button } from "../../components/ui/Button";
@@ -6,24 +7,43 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatTimestamp } from "../../lib/date-format";
 import { useWorkspaceStore } from "./project-store";
 
-const filterPills = [
-  "All Projects",
-  "Recent",
-  "Favorites",
-  "Templates",
-  "Ready to generate"
-] as const;
+const filterPills = ["All Projects", "Recent", "Ready to generate"] as const;
+type ProjectFilter = (typeof filterPills)[number];
+
+const RECENT_PROJECT_LIMIT = 5;
 
 export function ProjectsPage() {
   const navigate = useNavigate();
   const projects = useWorkspaceStore((state) => state.projects);
   const isLoading = useWorkspaceStore((state) => state.isLoading);
   const isSaving = useWorkspaceStore((state) => state.isSaving);
+  const isExporting = useWorkspaceStore((state) => state.isExporting);
   const errorMessage = useWorkspaceStore((state) => state.errorMessage);
+  const exportResult = useWorkspaceStore((state) => state.exportResult);
   const openProject = useWorkspaceStore((state) => state.openProject);
   const renameProject = useWorkspaceStore((state) => state.renameProject);
   const duplicateProject = useWorkspaceStore((state) => state.duplicateProject);
   const deleteProject = useWorkspaceStore((state) => state.deleteProject);
+  const exportProject = useWorkspaceStore((state) => state.exportProject);
+  const isBusy = isSaving || isExporting;
+  const [activeFilter, setActiveFilter] =
+    useState<ProjectFilter>("All Projects");
+
+  const filteredProjects = useMemo(() => {
+    switch (activeFilter) {
+      case "Recent":
+        return [...projects]
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+          .slice(0, RECENT_PROJECT_LIMIT);
+      case "Ready to generate":
+        return projects.filter(
+          (project) => project.status === "Ready to Generate"
+        );
+      case "All Projects":
+      default:
+        return projects;
+    }
+  }, [activeFilter, projects]);
 
   async function handleOpenProject(projectId: string) {
     await openProject(projectId);
@@ -41,8 +61,14 @@ export function ProjectsPage() {
     await renameProject(projectId, nextName);
   }
 
-  async function handleDuplicateProject(projectId: string, projectName: string) {
-    const nextName = window.prompt("Duplicate project as", `${projectName} Copy`);
+  async function handleDuplicateProject(
+    projectId: string,
+    projectName: string
+  ) {
+    const nextName = window.prompt(
+      "Duplicate project as",
+      `${projectName} Copy`
+    );
     await duplicateProject(projectId, nextName ?? undefined);
   }
 
@@ -53,6 +79,10 @@ export function ProjectsPage() {
     }
 
     await deleteProject(projectId);
+  }
+
+  async function handleExportProject(projectId: string) {
+    await exportProject(projectId);
   }
 
   return (
@@ -76,23 +106,28 @@ export function ProjectsPage() {
 
           <Panel
             eyebrow="Starter templates"
-            title="Suggested first-run projects"
-            description="Templates are still static, but the project list now loads from persisted local data."
+            title="Skip the blank slate"
+            description="Templates preselect a controller, voltage domain, and a suggested device list."
           >
             <ul className="list-reset stack-sm">
               <li className="inspector-row">
-                <strong>STM32 sensor node</strong>
-                <span>MCU + flash + IMU + barometer</span>
+                <strong>STM32 flight controller</strong>
+                <span>STM32F405 + IMU + barometer</span>
               </li>
               <li className="inspector-row">
                 <strong>RP2040 utility board</strong>
-                <span>USB + UART bridge + GPIO header</span>
+                <span>USB bridge + debug header</span>
               </li>
               <li className="inspector-row">
-                <strong>ESP32 data logger</strong>
-                <span>Wireless + storage + debug console</span>
+                <strong>STM32H7 data logger</strong>
+                <span>High-throughput logging + flash storage</span>
               </li>
             </ul>
+            <div className="button-group">
+              <Link className="button button--secondary" to="/templates">
+                Browse templates
+              </Link>
+            </div>
           </Panel>
         </>
       }
@@ -117,11 +152,32 @@ export function ProjectsPage() {
           </Panel>
         ) : null}
 
+        {exportResult ? (
+          <Panel title="Export ready" description={exportResult.message}>
+            {exportResult.kind === "download-url" ? (
+              <div className="button-group">
+                <a
+                  className="button button--secondary"
+                  download={exportResult.fileName}
+                  href={exportResult.target}
+                >
+                  Download JSON
+                </a>
+              </div>
+            ) : null}
+          </Panel>
+        ) : null}
+
         <div className="filter-row">
-          {filterPills.map((pill, index) => (
+          {filterPills.map((pill) => (
             <button
               key={pill}
-              className={index === 0 ? "filter-pill filter-pill--active" : "filter-pill"}
+              className={
+                pill === activeFilter
+                  ? "filter-pill filter-pill--active"
+                  : "filter-pill"
+              }
+              onClick={() => setActiveFilter(pill)}
               type="button"
             >
               {pill}
@@ -130,7 +186,10 @@ export function ProjectsPage() {
         </div>
 
         {isLoading && projects.length === 0 ? (
-          <Panel title="Loading projects" description="Reading local project files now." />
+          <Panel
+            title="Loading projects"
+            description="Reading local project files now."
+          />
         ) : null}
 
         {!isLoading && projects.length === 0 ? (
@@ -146,9 +205,30 @@ export function ProjectsPage() {
           </Panel>
         ) : null}
 
-        {projects.length > 0 ? (
+        {projects.length > 0 && filteredProjects.length === 0 ? (
+          <Panel
+            title={`No projects match "${activeFilter}"`}
+            description={
+              activeFilter === "Ready to generate"
+                ? "Finish pin mapping on a project to surface it here."
+                : "Try a different filter to see more projects."
+            }
+          >
+            <div className="button-group">
+              <Button
+                onClick={() => setActiveFilter("All Projects")}
+                type="button"
+                variant="secondary"
+              >
+                Show all projects
+              </Button>
+            </div>
+          </Panel>
+        ) : null}
+
+        {filteredProjects.length > 0 ? (
           <section className="cards-grid">
-            {projects.map((project) => (
+            {filteredProjects.map((project) => (
               <article key={project.id} className="project-card">
                 <div className="project-card__header">
                   <div>
@@ -179,9 +259,9 @@ export function ProjectsPage() {
                   </div>
                 </dl>
 
-                <div className="project-card__actions">
+                <div className="project-card__actions button-group">
                   <Button
-                    disabled={isSaving}
+                    disabled={isBusy}
                     onClick={() => void handleOpenProject(project.id)}
                     type="button"
                     variant="secondary"
@@ -189,24 +269,38 @@ export function ProjectsPage() {
                     Open
                   </Button>
                   <Button
-                    disabled={isSaving}
-                    onClick={() => void handleDuplicateProject(project.id, project.name)}
+                    disabled={isBusy}
+                    onClick={() =>
+                      void handleDuplicateProject(project.id, project.name)
+                    }
                     type="button"
                     variant="ghost"
                   >
                     Duplicate
                   </Button>
                   <Button
-                    disabled={isSaving}
-                    onClick={() => void handleRenameProject(project.id, project.name)}
+                    disabled={isBusy}
+                    onClick={() => void handleExportProject(project.id)}
+                    type="button"
+                    variant="ghost"
+                  >
+                    Export
+                  </Button>
+                  <Button
+                    disabled={isBusy}
+                    onClick={() =>
+                      void handleRenameProject(project.id, project.name)
+                    }
                     type="button"
                     variant="ghost"
                   >
                     Rename
                   </Button>
                   <Button
-                    disabled={isSaving}
-                    onClick={() => void handleDeleteProject(project.id, project.name)}
+                    disabled={isBusy}
+                    onClick={() =>
+                      void handleDeleteProject(project.id, project.name)
+                    }
                     type="button"
                     variant="ghost"
                   >

@@ -63,7 +63,9 @@ function parseCatalogModules<T extends { id: string; name: string }>(
       try {
         return schema.parse(moduleValue);
       } catch (error) {
-        throw new Error(`Invalid ${kind} catalog entry at ${path}: ${String(error)}`);
+        throw new Error(
+          `Invalid ${kind} catalog entry at ${path}: ${String(error)}`
+        );
       }
     })
     .sort((left, right) => left.name.localeCompare(right.name));
@@ -79,15 +81,21 @@ function parseCatalogModules<T extends { id: string; name: string }>(
   return entries;
 }
 
-const controllerModules = import.meta.glob("../../../catalog/controllers/*.json", {
-  eager: true,
-  import: "default"
-});
+const controllerModules = import.meta.glob(
+  "../../../catalog/controllers/*.json",
+  {
+    eager: true,
+    import: "default"
+  }
+);
 
-const componentModules = import.meta.glob("../../../catalog/components/*.json", {
-  eager: true,
-  import: "default"
-});
+const componentModules = import.meta.glob(
+  "../../../catalog/components/*.json",
+  {
+    eager: true,
+    import: "default"
+  }
+);
 
 const controllers = parseCatalogModules<ControllerCatalogEntry>(
   controllerModules,
@@ -114,8 +122,12 @@ export const catalog = {
   controllers,
   components,
   categories,
-  controllersById: new Map(controllers.map((controller) => [controller.id, controller])),
-  componentsById: new Map(components.map((component) => [component.id, component]))
+  controllersById: new Map(
+    controllers.map((controller) => [controller.id, controller])
+  ),
+  componentsById: new Map(
+    components.map((component) => [component.id, component])
+  )
 } as const satisfies {
   controllers: ControllerCatalogEntry[];
   components: ComponentCatalogEntry[];
@@ -136,12 +148,16 @@ export function findControllerInterface(
   controller: ControllerCatalogEntry,
   interfaceName: string
 ) {
-  return controller.interfaces.find((controllerInterface) => controllerInterface.name === interfaceName);
+  return controller.interfaces.find(
+    (controllerInterface) => controllerInterface.name === interfaceName
+  );
 }
 
 export function findComponentConnectionOption(
   component: ComponentCatalogEntry,
   protocol: ComponentConnectionOption["protocol"]
 ) {
-  return component.connectionOptions.find((option) => option.protocol === protocol);
+  return component.connectionOptions.find(
+    (option) => option.protocol === protocol
+  );
 }

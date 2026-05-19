@@ -38,7 +38,9 @@ function makeFallbackComponent(componentId: string): ComponentCatalogEntry {
 
 function buildWorkspaceComponents(project: ProjectDocument) {
   return project.components.map<WorkspaceProjectComponent>((component) => {
-    const part = findComponent(component.catalogId) ?? makeFallbackComponent(component.catalogId);
+    const part =
+      findComponent(component.catalogId) ??
+      makeFallbackComponent(component.catalogId);
 
     return {
       ...component,
@@ -53,7 +55,9 @@ function buildWorkspaceConnections(
   project: ProjectDocument,
   components: WorkspaceProjectComponent[]
 ) {
-  const componentsById = new Map(components.map((component) => [component.id, component]));
+  const componentsById = new Map(
+    components.map((component) => [component.id, component])
+  );
 
   return project.connections.map<WorkspaceConnection>((connection) => {
     const component = componentsById.get(connection.componentId);
@@ -66,8 +70,12 @@ function buildWorkspaceConnections(
   });
 }
 
-export function resolveProjectDocument(project: ProjectDocument): WorkspaceProject {
-  const controller = findController(project.controllerId) ?? makeFallbackController(project.controllerId);
+export function resolveProjectDocument(
+  project: ProjectDocument
+): WorkspaceProject {
+  const controller =
+    findController(project.controllerId) ??
+    makeFallbackController(project.controllerId);
   const components = buildWorkspaceComponents(project);
   const connections = buildWorkspaceConnections(project, components);
 
@@ -83,7 +91,8 @@ export function toProjectSummary(project: ProjectDocument): ProjectSummary {
   return {
     id: project.id,
     name: project.name,
-    controller: findController(project.controllerId)?.name ?? project.controllerId,
+    controller:
+      findController(project.controllerId)?.name ?? project.controllerId,
     deviceCount: project.components.length,
     interfaceCount: project.connections.length,
     updatedAt: project.updatedAt,
@@ -93,7 +102,9 @@ export function toProjectSummary(project: ProjectDocument): ProjectSummary {
 }
 
 export function sortProjects(projects: ProjectDocument[]) {
-  return [...projects].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  return [...projects].sort((left, right) =>
+    right.updatedAt.localeCompare(left.updatedAt)
+  );
 }
 
 export function getInitialControllerId() {

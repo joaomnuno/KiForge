@@ -1,101 +1,51 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { AppScaffold } from "../../components/layout/AppScaffold";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { catalog } from "../catalog/catalog";
 import { useWorkspaceStore } from "../projects/project-store";
+import type { WorkspaceProjectComponent } from "../../types/domain";
 
 export function ComponentsPage() {
   const currentProject = useWorkspaceStore((state) => state.currentProject);
-  const isLoading = useWorkspaceStore((state) => state.isLoading);
   const isSaving = useWorkspaceStore((state) => state.isSaving);
   const errorMessage = useWorkspaceStore((state) => state.errorMessage);
   const addComponentToCurrentProject = useWorkspaceStore(
     (state) => state.addComponentToCurrentProject
   );
-  const saveCurrentProject = useWorkspaceStore((state) => state.saveCurrentProject);
+  const removeComponentFromCurrentProject = useWorkspaceStore(
+    (state) => state.removeComponentFromCurrentProject
+  );
+  const renameComponentInCurrentProject = useWorkspaceStore(
+    (state) => state.renameComponentInCurrentProject
+  );
   const [activeCategoryId, setActiveCategoryId] = useState(
     catalog.categories[0]?.id ?? ""
   );
 
   const visibleEntries = useMemo(
-    () => catalog.components.filter((entry) => entry.categoryId === activeCategoryId),
+    () =>
+      catalog.components.filter(
+        (entry) => entry.categoryId === activeCategoryId
+      ),
     [activeCategoryId]
   );
 
   if (!currentProject) {
-    return (
-      <AppScaffold activeNav="library" searchPlaceholder="Search components, packages, or protocols...">
-        <Panel
-          title={isLoading ? "Loading workspace" : "No project selected"}
-          description={
-            isLoading
-              ? "Reading your current project definition."
-              : "Open a project or create a new one before adding devices."
-          }
-        >
-          <div className="button-group">
-            <Link className="button button--primary" to="/projects">
-              Go to Projects
-            </Link>
-          </div>
-        </Panel>
-      </AppScaffold>
-    );
+    return null;
   }
 
   return (
-    <AppScaffold
-      activeNav="library"
-      searchPlaceholder="Search components, packages, or protocols..."
-      projectStrip={{
-        name: currentProject.name,
-        controller: currentProject.controller.name,
-        status: currentProject.status,
-        voltageDomain: currentProject.voltageDomain,
-        onSave: () => void saveCurrentProject(),
-        isSaving
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+        gap: "var(--space-lg, 1.5rem)",
+        alignItems: "start"
       }}
-      inspector={
-        <>
-          <Panel
-            eyebrow="Selected project components"
-            title={`${currentProject.components.length} devices in scope`}
-            description="Instance naming is stored with the project so the logical inventory survives reloads."
-          >
-            {currentProject.components.length === 0 ? (
-              <p>No devices have been added yet.</p>
-            ) : (
-              <ul className="list-reset stack-sm">
-                {currentProject.components.map((component) => (
-                  <li key={component.id} className="component-list-item">
-                    <div>
-                      <strong>{component.instanceName}</strong>
-                      <span>{component.partName}</span>
-                    </div>
-                    <StatusBadge label={component.status} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-
-          <Panel
-            eyebrow="Next step"
-            title="Move to connection planning"
-            description="Once the inventory is stable, define logical protocols, controller interfaces, and pin mappings."
-          >
-            <Link className="button button--primary button--block" to="/workspace/connections">
-              Continue to connections
-            </Link>
-          </Panel>
-        </>
-      }
     >
-      <div className="components-layout">
-        <Panel eyebrow="Library categories" title="Browse by device role">
+      <div className="stack-lg">
+        <Panel eyebrow="Library categories" title="Browse by role">
           <div className="category-list">
             {catalog.categories.map((category) => (
               <button
@@ -117,7 +67,7 @@ export function ComponentsPage() {
         <Panel
           eyebrow="Component library"
           title="Available parts"
-          description="The MVP catalog is intentionally curated instead of pretending to be a full distributor database."
+          description="A curated catalog of devices ready to drop into your project."
         >
           {errorMessage ? <p className="form-note">{errorMessage}</p> : null}
           <div className="library-grid">
@@ -159,6 +109,114 @@ export function ComponentsPage() {
           </div>
         </Panel>
       </div>
-    </AppScaffold>
+
+      <Panel
+        eyebrow="Project inventory"
+        title={`Devices in this project — ${currentProject.components.length}`}
+      >
+        {currentProject.components.length === 0 ? (
+          <p>No devices added yet. Pick one from the catalog on the left.</p>
+        ) : (
+          <ul className="list-reset stack-sm">
+            {currentProject.components.map((component) => (
+              <ProjectComponentRow
+                key={component.id}
+                component={component}
+                isSaving={isSaving}
+                onRename={(value) =>
+                  void renameComponentInCurrentProject(component.id, value)
+                }
+                onRemove={() => {
+                  const confirmed = window.confirm(
+                    `Remove ${component.instanceName} from this project?`
+                  );
+                  if (confirmed) {
+                    void removeComponentFromCurrentProject(component.id);
+                  }
+                }}
+              />
+            ))}
+          </ul>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+interface ProjectComponentRowProps {
+  component: WorkspaceProjectComponent;
+  isSaving: boolean;
+  onRename: (value: string) => void;
+  onRemove: () => void;
+}
+
+function ProjectComponentRow({
+  component,
+  isSaving,
+  onRename,
+  onRemove
+}: ProjectComponentRowProps) {
+  const [value, setValue] = useState(component.instanceName);
+
+  useEffect(() => {
+    setValue(component.instanceName);
+  }, [component.instanceName]);
+
+  function commit() {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === component.instanceName) {
+      setValue(component.instanceName);
+      return;
+    }
+
+    onRename(trimmed);
+  }
+
+  return (
+    <li
+      className="component-list-item"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) auto auto",
+        alignItems: "center",
+        gap: "var(--space-sm, 0.75rem)"
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.25rem",
+          minWidth: 0
+        }}
+      >
+        <input
+          className="field__control"
+          disabled={isSaving}
+          onBlur={commit}
+          onChange={(event) => setValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
+          }}
+          type="text"
+          value={value}
+        />
+        <span style={{ opacity: 0.7, fontSize: "0.875rem" }}>
+          {component.partName}
+        </span>
+      </div>
+      <StatusBadge label={component.status} />
+      <Button
+        disabled={isSaving}
+        onClick={onRemove}
+        type="button"
+        variant="ghost"
+      >
+        Remove
+      </Button>
+    </li>
   );
 }

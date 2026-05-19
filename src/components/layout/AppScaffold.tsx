@@ -38,7 +38,9 @@ export function AppScaffold({
           }
         >
           <main className="workspace__main">{children}</main>
-          {inspector ? <aside className="workspace__inspector">{inspector}</aside> : null}
+          {inspector ? (
+            <aside className="workspace__inspector">{inspector}</aside>
+          ) : null}
         </div>
       </div>
     </div>

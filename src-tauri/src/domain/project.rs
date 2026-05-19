@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    fs,
+    fs::{self, File, OpenOptions},
+    io::{ErrorKind, Write},
     path::{Path, PathBuf},
 };
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
+
+const MAX_PROJECT_ID_LEN: usize = 96;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -75,6 +78,38 @@ pub struct ProjectDocument {
     pub updated_at: String,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProjectExportManifest<'a> {
+    format_version: u8,
+    generated_at: String,
+    project_id: &'a str,
+    project_name: &'a str,
+    controller: ExportController<'a>,
+    summary: ExportSummary,
+    files: Vec<&'static str>,
+    components: &'a [ProjectComponentRecord],
+    connections: &'a [ConnectionRecord],
+    issues: &'a [ValidationIssue],
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ExportController<'a> {
+    id: &'a str,
+    voltage_domain: &'a str,
+    template: &'a str,
+    output_target: &'a str,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ExportSummary {
+    component_count: usize,
+    connection_count: usize,
+    issue_count: usize,
+}
+
 pub struct ProjectStore {
     root_dir: PathBuf,
 }
@@ -89,12 +124,17 @@ impl ProjectStore {
 
         let mut projects = Vec::new();
         let projects_dir = self.projects_dir();
-        let entries = fs::read_dir(&projects_dir)
-            .map_err(|error| format_path_error("Failed to read projects directory", &projects_dir, &error))?;
+        let entries = fs::read_dir(&projects_dir).map_err(|error| {
+            format_path_error("Failed to read projects directory", &projects_dir, &error)
+        })?;
 
         for entry in entries {
             let entry = entry.map_err(|error| {
-                format!("Failed to enumerate project directories in {}: {}", projects_dir.display(), error)
+                format!(
+                    "Failed to enumerate project directories in {}: {}",
+                    projects_dir.display(),
+                    error
+                )
             })?;
             let entry_type = entry.file_type().map_err(|error| {
                 format!(
@@ -225,24 +265,61 @@ impl ProjectStore {
             return Err(format!("Project \"{}\" was not found.", project_id));
         }
 
-        fs::remove_dir_all(&project_dir)
-            .map_err(|error| format_path_error("Failed to delete project directory", &project_dir, &error))
+        fs::remove_dir_all(&project_dir).map_err(|error| {
+            format_path_error("Failed to delete project directory", &project_dir, &error)
+        })
     }
 
     pub fn export_project(&self, project_id: &str) -> Result<String, String> {
         let project = self.load_project(project_id)?;
         let exports_dir = self.exports_dir();
-        fs::create_dir_all(&exports_dir)
-            .map_err(|error| format_path_error("Failed to create export directory", &exports_dir, &error))?;
+        fs::create_dir_all(&exports_dir).map_err(|error| {
+            format_path_error("Failed to create export directory", &exports_dir, &error)
+        })?;
 
-        let export_path = exports_dir.join(format!("{}-project.json", project.id));
-        let serialized = serde_json::to_string_pretty(&project)
-            .map_err(|error| format!("Failed to serialize project {}: {}", project.id, error))?;
+        let export_dir = exports_dir.join(format!("{}-export", project.id));
+        fs::create_dir_all(&export_dir).map_err(|error| {
+            format_path_error(
+                "Failed to create project export directory",
+                &export_dir,
+                &error,
+            )
+        })?;
 
-        fs::write(&export_path, serialized)
-            .map_err(|error| format_path_error("Failed to write exported project", &export_path, &error))?;
+        let manifest = ProjectExportManifest {
+            format_version: 1,
+            generated_at: current_timestamp()?,
+            project_id: &project.id,
+            project_name: &project.name,
+            controller: ExportController {
+                id: &project.controller_id,
+                voltage_domain: &project.voltage_domain,
+                template: &project.template,
+                output_target: &project.output_target,
+            },
+            summary: ExportSummary {
+                component_count: project.components.len(),
+                connection_count: project.connections.len(),
+                issue_count: project.issues.len(),
+            },
+            files: vec!["project.json", "manifest.json"],
+            components: &project.components,
+            connections: &project.connections,
+            issues: &project.issues,
+        };
 
-        Ok(export_path.display().to_string())
+        self.write_json_file(
+            &export_dir.join("project.json"),
+            &project,
+            "Failed to write exported project",
+        )?;
+        self.write_json_file(
+            &export_dir.join("manifest.json"),
+            &manifest,
+            "Failed to write export manifest",
+        )?;
+
+        Ok(export_dir.display().to_string())
     }
 
     fn projects_dir(&self) -> PathBuf {
@@ -263,8 +340,9 @@ impl ProjectStore {
 
     fn ensure_projects_dir(&self) -> Result<(), String> {
         let projects_dir = self.projects_dir();
-        fs::create_dir_all(&projects_dir)
-            .map_err(|error| format_path_error("Failed to create projects directory", &projects_dir, &error))
+        fs::create_dir_all(&projects_dir).map_err(|error| {
+            format_path_error("Failed to create projects directory", &projects_dir, &error)
+        })
     }
 
     fn read_project_file(&self, path: &Path) -> Result<ProjectDocument, String> {
@@ -276,18 +354,30 @@ impl ProjectStore {
     }
 
     fn write_project_file(&self, project: &ProjectDocument) -> Result<ProjectDocument, String> {
+        validate_project_id(&project.id)?;
+
         let project_dir = self.project_dir(&project.id);
-        fs::create_dir_all(&project_dir)
-            .map_err(|error| format_path_error("Failed to create project directory", &project_dir, &error))?;
+        fs::create_dir_all(&project_dir).map_err(|error| {
+            format_path_error("Failed to create project directory", &project_dir, &error)
+        })?;
 
         let project_file = self.project_file(&project.id);
-        let serialized = serde_json::to_string_pretty(project)
-            .map_err(|error| format!("Failed to serialize project {}: {}", project.id, error))?;
-
-        fs::write(&project_file, serialized)
-            .map_err(|error| format_path_error("Failed to write project file", &project_file, &error))?;
+        self.write_json_file(&project_file, project, "Failed to write project file")?;
 
         Ok(project.clone())
+    }
+
+    fn write_json_file<T: Serialize>(
+        &self,
+        path: &Path,
+        value: &T,
+        context: &str,
+    ) -> Result<(), String> {
+        let serialized = serde_json::to_vec_pretty(value).map_err(|error| {
+            format!("Failed to serialize JSON for {}: {}", path.display(), error)
+        })?;
+
+        write_file_atomically(path, &serialized, context)
     }
 
     fn make_unique_project_id(&self, name: &str) -> String {
@@ -296,7 +386,7 @@ impl ProjectStore {
         let mut duplicate_index = 2;
 
         while self.project_dir(&candidate_id).exists() {
-            candidate_id = format!("{}-{}", base_id, duplicate_index);
+            candidate_id = project_id_with_suffix(&base_id, duplicate_index);
             duplicate_index += 1;
         }
 
@@ -305,11 +395,105 @@ impl ProjectStore {
 }
 
 fn validate_project_id(project_id: &str) -> Result<(), String> {
-    if project_id.trim().is_empty() {
+    if project_id.is_empty() || project_id.trim() != project_id {
         return Err("Project id cannot be empty.".into());
     }
 
+    if project_id.len() > MAX_PROJECT_ID_LEN {
+        return Err(format!(
+            "Project id cannot be longer than {} characters.",
+            MAX_PROJECT_ID_LEN
+        ));
+    }
+
+    if project_id == "."
+        || project_id == ".."
+        || project_id.contains('/')
+        || project_id.contains('\\')
+    {
+        return Err("Project id cannot contain path separators or traversal segments.".into());
+    }
+
+    if !project_id
+        .bytes()
+        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+    {
+        return Err("Project id may only contain ASCII letters, numbers, and hyphens.".into());
+    }
+
+    if !project_id
+        .bytes()
+        .next()
+        .is_some_and(|byte| byte.is_ascii_alphanumeric())
+        || !project_id
+            .bytes()
+            .last()
+            .is_some_and(|byte| byte.is_ascii_alphanumeric())
+    {
+        return Err("Project id must start and end with an ASCII letter or number.".into());
+    }
+
+    if is_reserved_project_id(project_id) {
+        return Err("Project id uses a reserved system name.".into());
+    }
+
     Ok(())
+}
+
+fn write_file_atomically(path: &Path, contents: &[u8], context: &str) -> Result<(), String> {
+    let (temp_path, mut temp_file) = create_atomic_temp_file(path, context)?;
+
+    if let Err(error) = temp_file
+        .write_all(contents)
+        .and_then(|_| temp_file.sync_all())
+    {
+        let _ = fs::remove_file(&temp_path);
+        return Err(format_path_error(context, path, &error));
+    }
+
+    drop(temp_file);
+
+    if let Err(error) = fs::rename(&temp_path, path) {
+        let _ = fs::remove_file(&temp_path);
+        return Err(format_path_error(context, path, &error));
+    }
+
+    Ok(())
+}
+
+fn create_atomic_temp_file(path: &Path, context: &str) -> Result<(PathBuf, File), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("Failed to resolve parent directory for {}", path.display()))?;
+    let file_name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or_else(|| format!("Failed to resolve file name for {}", path.display()))?;
+    let unique_part = OffsetDateTime::now_utc().unix_timestamp_nanos();
+
+    for attempt in 0..100 {
+        let temp_path = parent.join(format!(
+            ".{}.{}.{}.tmp",
+            file_name,
+            std::process::id(),
+            unique_part + attempt
+        ));
+
+        match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temp_path)
+        {
+            Ok(file) => return Ok((temp_path, file)),
+            Err(error) if error.kind() == ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(format_path_error(context, path, &error)),
+        }
+    }
+
+    Err(format!(
+        "Failed to create temporary file for {} after multiple attempts.",
+        path.display()
+    ))
 }
 
 fn format_path_error(context: &str, path: &Path, error: &std::io::Error) -> String {
@@ -344,17 +528,94 @@ fn slugify(value: &str) -> String {
     }
 
     if slug.is_empty() {
-        return "project".into();
+        slug = "project".into();
+    }
+
+    normalize_project_id_slug(slug)
+}
+
+fn normalize_project_id_slug(mut slug: String) -> String {
+    if slug.len() > MAX_PROJECT_ID_LEN {
+        slug.truncate(MAX_PROJECT_ID_LEN);
+        while slug.ends_with('-') {
+            slug.pop();
+        }
+    }
+
+    if slug.is_empty() {
+        slug = "project".into();
+    }
+
+    if is_reserved_project_id(&slug) {
+        slug = format!("project-{}", slug);
     }
 
     slug
 }
 
+fn project_id_with_suffix(base_id: &str, duplicate_index: usize) -> String {
+    let suffix = format!("-{}", duplicate_index);
+    let max_base_len = MAX_PROJECT_ID_LEN.saturating_sub(suffix.len());
+    let mut base = base_id.chars().take(max_base_len).collect::<String>();
+
+    while base.ends_with('-') {
+        base.pop();
+    }
+
+    if base.is_empty() {
+        base = "project".into();
+    }
+
+    format!("{}{}", base, suffix)
+}
+
+fn is_reserved_project_id(project_id: &str) -> bool {
+    matches!(
+        project_id.to_ascii_lowercase().as_str(),
+        "con"
+            | "prn"
+            | "aux"
+            | "nul"
+            | "com1"
+            | "com2"
+            | "com3"
+            | "com4"
+            | "com5"
+            | "com6"
+            | "com7"
+            | "com8"
+            | "com9"
+            | "lpt1"
+            | "lpt2"
+            | "lpt3"
+            | "lpt4"
+            | "lpt5"
+            | "lpt6"
+            | "lpt7"
+            | "lpt8"
+            | "lpt9"
+    )
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{CreateProjectInput, ProjectStore};
-    use std::path::Path;
+    use super::{
+        validate_project_id, ConnectionRecord, CreateProjectInput, ProjectComponentRecord,
+        ProjectDocument, ProjectStore, SignalAssignment, ValidationIssue,
+    };
+    use std::{fs, path::Path};
     use tempfile::tempdir;
+
+    fn sample_input() -> CreateProjectInput {
+        CreateProjectInput {
+            name: "Rocket FC Rev A".into(),
+            description: "Primary flight controller.".into(),
+            controller_id: "stm32h743zi".into(),
+            template: "Blank project".into(),
+            voltage_domain: "3.3V".into(),
+            output_target: "Generate KiCad starter project".into(),
+        }
+    }
 
     #[test]
     fn project_store_crud_round_trip() {
@@ -362,14 +623,7 @@ mod tests {
         let store = ProjectStore::new(temp_dir.path().to_path_buf());
 
         let created = store
-            .create_project(CreateProjectInput {
-                name: "Rocket FC Rev A".into(),
-                description: "Primary flight controller.".into(),
-                controller_id: "stm32h743zi".into(),
-                template: "Blank project".into(),
-                voltage_domain: "3.3V".into(),
-                output_target: "Generate KiCad starter project".into(),
-            })
+            .create_project(sample_input())
             .expect("create project");
 
         assert_eq!(created.id, "rocket-fc-rev-a");
@@ -392,12 +646,120 @@ mod tests {
         assert_eq!(listed.len(), 2);
 
         let export_path = store.export_project(&duplicate.id).expect("export project");
-        assert!(Path::new(&export_path).exists());
+        assert!(Path::new(&export_path).is_dir());
+        assert!(Path::new(&export_path).join("project.json").exists());
+        assert!(Path::new(&export_path).join("manifest.json").exists());
 
         store.delete_project(&created.id).expect("delete project");
 
         let remaining = store.list_projects().expect("list after delete");
         assert_eq!(remaining.len(), 1);
         assert_eq!(remaining[0].id, duplicate.id);
+    }
+
+    #[test]
+    fn project_id_validation_rejects_path_traversal_and_unsafe_ids() {
+        let invalid_ids = [
+            "",
+            " ",
+            ".",
+            "..",
+            "../escape",
+            "nested/project",
+            "nested\\project",
+            "/absolute",
+            "rocket fc",
+            "rocket.fc",
+            "rocket_fc",
+            "-rocket",
+            "rocket-",
+            "con",
+        ];
+
+        for project_id in invalid_ids {
+            assert!(
+                validate_project_id(project_id).is_err(),
+                "expected invalid project id {project_id:?}"
+            );
+        }
+
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let created = store
+            .create_project(sample_input())
+            .expect("create project");
+        let attempted_escape = ProjectDocument {
+            id: "../escape".into(),
+            ..created
+        };
+
+        assert!(store.save_project(attempted_escape).is_err());
+        assert!(!temp_dir.path().join("escape").exists());
+    }
+
+    #[test]
+    fn export_project_writes_bundle_with_project_and_manifest() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let mut project = store
+            .create_project(sample_input())
+            .expect("create project");
+
+        project.components.push(ProjectComponentRecord {
+            id: "imu-1".into(),
+            catalog_id: "bosch-bmi088".into(),
+            instance_name: "Flight IMU".into(),
+            status: "Ready".into(),
+            preferred_protocol: Some("SPI".into()),
+        });
+        project.connections.push(ConnectionRecord {
+            id: "conn-imu-1".into(),
+            component_id: "imu-1".into(),
+            protocol: "SPI".into(),
+            controller_interface: "SPI1".into(),
+            pins: vec!["PA5".into(), "PA6".into(), "PA7".into()],
+            bus_mode: "Dedicated".into(),
+            optional_signals: vec!["INT1".into()],
+            status: "Assigned".into(),
+            assignments: vec![SignalAssignment {
+                signal: "SCK".into(),
+                selected_pin: "PA5".into(),
+                alternate_pins: vec!["PB3".into()],
+                status: "Selected".into(),
+            }],
+        });
+        project.issues.push(ValidationIssue {
+            id: "issue-1".into(),
+            severity: "warning".into(),
+            message: "INT1 is optional but unassigned.".into(),
+        });
+
+        let saved = store.save_project(project).expect("save project");
+        let export_path = store.export_project(&saved.id).expect("export project");
+        let export_dir = Path::new(&export_path);
+
+        assert!(export_dir.is_dir());
+
+        let exported_project: ProjectDocument = serde_json::from_str(
+            &fs::read_to_string(export_dir.join("project.json")).expect("read project export"),
+        )
+        .expect("parse project export");
+        assert_eq!(exported_project, saved);
+
+        let manifest: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(export_dir.join("manifest.json")).expect("read manifest"),
+        )
+        .expect("parse manifest");
+
+        assert_eq!(manifest["projectId"], saved.id);
+        assert_eq!(manifest["controller"]["id"], saved.controller_id);
+        assert_eq!(manifest["summary"]["componentCount"], 1);
+        assert_eq!(manifest["summary"]["connectionCount"], 1);
+        assert_eq!(manifest["summary"]["issueCount"], 1);
+        assert_eq!(manifest["components"][0]["id"], "imu-1");
+        assert_eq!(manifest["connections"][0]["id"], "conn-imu-1");
+        assert_eq!(manifest["issues"][0]["id"], "issue-1");
+        assert_eq!(manifest["files"][0], "project.json");
+        assert_eq!(manifest["files"][1], "manifest.json");
     }
 }

@@ -65,6 +65,18 @@ export interface ProjectSummary {
   status: ProjectStatus;
 }
 
+export type ProjectExportResultKind = "file-path" | "download-url";
+
+export interface ProjectExportResult {
+  projectId: string;
+  projectName: string;
+  fileName: string;
+  target: string;
+  kind: ProjectExportResultKind;
+  message: string;
+  exportedAt: string;
+}
+
 export interface SignalPinOption {
   signal: string;
   pins: string[];
@@ -176,8 +188,10 @@ export interface WorkspaceConnection extends ConnectionRecord {
   peerPart: string;
 }
 
-export interface WorkspaceProject
-  extends Omit<ProjectDocument, "controllerId" | "components" | "connections"> {
+export interface WorkspaceProject extends Omit<
+  ProjectDocument,
+  "controllerId" | "components" | "connections"
+> {
   controller: ControllerCatalogEntry;
   components: WorkspaceProjectComponent[];
   connections: WorkspaceConnection[];
