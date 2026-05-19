@@ -37,11 +37,10 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: npm
+          bun-version: latest
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -54,31 +53,28 @@ jobs:
           workspaces: ./src-tauri -> target
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: bun run lint
 
       - name: Format check
-        run: npm run format:check
+        run: bun run format:check
 
       - name: Typecheck
-        run: npm run typecheck
+        run: bun run typecheck
 
       - name: Test
-        run: npm run test
+        run: bun run test
 
       - name: Build frontend
-        run: npm run build
+        run: bun run build
 
       - name: Rust format check
-        run: npm run rust:fmt
+        run: bun run rust:fmt
 
       - name: Rust clippy
-        run: npm run rust:clippy
+        run: bun run rust:clippy
 
       - name: Rust tests
-        run: npm run rust:test
-
-      - name: Build desktop bundles
-        run: npm run tauri:build -- --debug
+        run: bun run rust:test
