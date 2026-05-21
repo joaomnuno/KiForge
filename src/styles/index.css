@@ -443,6 +443,75 @@ button {
   width: 100%;
 }
 
+.button--destructive {
+  color: #1a0606;
+  background: linear-gradient(135deg, var(--error), #d76b65);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: none;
+  transform: none;
+}
+
+.dialog__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 7, 7, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+}
+
+.dialog__content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  box-shadow: var(--shadow-soft);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 51;
+}
+
+.dialog__content:focus {
+  outline: none;
+}
+
+.dialog__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.dialog__description {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
 .panel {
   border-radius: var(--radius-lg);
   background: rgba(28, 27, 27, 0.92);
