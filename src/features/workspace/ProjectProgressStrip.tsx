@@ -1,5 +1,4 @@
 import { NavLink } from "react-router-dom";
-import { Tooltip } from "../../components/ui/Tooltip";
 import type {
   ProjectProgress,
   ProjectStepId
@@ -23,35 +22,26 @@ export function ProjectProgressStrip({ progress }: ProjectProgressStripProps) {
       </div>
       <ol className="progress-strip__steps">
         {progress.steps.map((step) => {
-          const targetTooltip = getStepTargetTooltip(step.id);
-          const stepLink = (
-            <NavLink
-              to={step.href}
-              className={({ isActive }) =>
-                isActive
-                  ? "progress-strip__link progress-strip__link--active"
-                  : "progress-strip__link"
-              }
-              end
-            >
-              <span className="progress-strip__dot" aria-hidden />
-              <span className="progress-strip__label">{step.label}</span>
-              <span className="progress-strip__summary">{step.summary}</span>
-            </NavLink>
-          );
-
+          const routeHint = getStepRouteHint(step.id);
           return (
             <li
               key={step.id}
               className={`progress-strip__step progress-strip__step--${step.status}`}
             >
-              {targetTooltip ? (
-                <Tooltip content={targetTooltip} side="bottom">
-                  {stepLink}
-                </Tooltip>
-              ) : (
-                stepLink
-              )}
+              <NavLink
+                to={step.href}
+                className={({ isActive }) =>
+                  isActive
+                    ? "progress-strip__link progress-strip__link--active"
+                    : "progress-strip__link"
+                }
+                title={routeHint ?? undefined}
+                end
+              >
+                <span className="progress-strip__dot" aria-hidden />
+                <span className="progress-strip__label">{step.label}</span>
+                <span className="progress-strip__summary">{step.summary}</span>
+              </NavLink>
             </li>
           );
         })}
@@ -60,7 +50,7 @@ export function ProjectProgressStrip({ progress }: ProjectProgressStripProps) {
   );
 }
 
-function getStepTargetTooltip(stepId: ProjectStepId): string | null {
+function getStepRouteHint(stepId: ProjectStepId): string | null {
   switch (stepId) {
     case "pin-mapping":
       return "Opens /workspace/connections for pin assignment.";
