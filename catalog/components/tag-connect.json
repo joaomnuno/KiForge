@@ -6,6 +6,8 @@
   "summary": "Compact SWD header footprint for debug and flashing.",
   "voltage": "Board logic",
   "packageName": "Connector footprint",
+  "kicadLibId": "TagConnect:Conn_ARM_SWD_TagConnect_TC2030",
+  "vendoredSymbolPath": "catalog/symbols/kicad-official/TagConnect.kicad_sym",
   "supportedProtocols": ["SWD", "GPIO"],
   "connectionOptions": [
     {
