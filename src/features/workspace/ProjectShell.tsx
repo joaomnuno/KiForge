@@ -1,9 +1,12 @@
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Link, Navigate, Outlet } from "react-router-dom";
+import clsx from "clsx";
 import { Button } from "../../components/ui/Button";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useWorkspaceStore } from "../projects/project-store";
 import { getProjectProgress } from "../projects/project-progress";
 import { ProjectProgressStrip } from "./ProjectProgressStrip";
+import type { ProjectShellContext } from "./project-shell-context";
 
 export function ProjectShell() {
   const currentProject = useWorkspaceStore((state) => state.currentProject);
@@ -11,6 +14,15 @@ export function ProjectShell() {
   const exportResult = useWorkspaceStore((state) => state.exportResult);
   const saveCurrentProject = useWorkspaceStore(
     (state) => state.saveCurrentProject
+  );
+
+  const [inspector, setInspectorState] = useState<ReactNode | null>(null);
+  const setInspector = useCallback((node: ReactNode | null) => {
+    setInspectorState(node);
+  }, []);
+  const context = useMemo<ProjectShellContext>(
+    () => ({ setInspector }),
+    [setInspector]
   );
 
   if (currentProject == null) {
@@ -44,8 +56,23 @@ export function ProjectShell() {
 
       <ProjectProgressStrip progress={progress} />
 
-      <main className="project-shell__main">
-        <Outlet />
+      <main
+        className={clsx(
+          "project-shell__main",
+          inspector != null && "project-shell__main--with-inspector"
+        )}
+      >
+        <div className="project-shell__content">
+          <Outlet context={context} />
+        </div>
+        {inspector != null && (
+          <aside
+            className="project-shell__inspector"
+            aria-label="Project inspector"
+          >
+            {inspector}
+          </aside>
+        )}
       </main>
     </div>
   );
