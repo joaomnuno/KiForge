@@ -18,17 +18,17 @@ Each of those is a separate later ADR, not part of this decision.
 
 ## Alternatives considered
 
-| Library | Why not |
-|---|---|
-| **React Aria Components** (Adobe) | Best a11y baseline in the industry; lost to Radix on smaller mental model + lighter component-by-component install. Strong runner-up — revisit if Radix coverage gaps appear. |
-| **Mantine v8** | Batteries-included (Table, Tree, Calendar, Combobox), React 19 supported, CSS-vars themable. Lost on opinionated default style — we would spend the migration cost overriding its look to keep KiForge's engineering-tool aesthetic. Reconsider if we hit a Radix coverage wall and need 3+ heavy data components at once. |
-| **shadcn/ui** | Source-copied components on top of Radix + Tailwind. Lost because adopting Tailwind is itself a repo-wide migration with its own cost, and we already have a working tokens-based CSS system. Could revisit only as part of a separate "adopt Tailwind" decision. |
-| **Chakra UI v3** | Web-app aesthetic, large bundle, heavier default opinion than Mantine. Wrong vibe for a desktop tool. |
-| **MUI v6** | Material aesthetic — wrong for an engineering tool. Heavy bundle. Hard to brand away from. |
-| **Ant Design v5** | Enterprise/dense feel is closer to fit, but global override pattern, very high design lock-in, China-locale defaults that need extra work. |
-| **Fluent UI v9** (Microsoft) | OK density but heavy and Microsoft-y. Hard to escape the look. |
-| **Base UI** (MUI team) | Sibling-in-spirit to Radix but smaller primitive coverage and earlier maturity. |
-| **Tremor / Catalyst / Geist / Tailwind UI** | Dashboard or marketing focus. Not desktop tool. |
+| Library                                     | Why not                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **React Aria Components** (Adobe)           | Best a11y baseline in the industry; lost to Radix on smaller mental model + lighter component-by-component install. Strong runner-up — revisit if Radix coverage gaps appear.                                                                                                                                              |
+| **Mantine v8**                              | Batteries-included (Table, Tree, Calendar, Combobox), React 19 supported, CSS-vars themable. Lost on opinionated default style — we would spend the migration cost overriding its look to keep KiForge's engineering-tool aesthetic. Reconsider if we hit a Radix coverage wall and need 3+ heavy data components at once. |
+| **shadcn/ui**                               | Source-copied components on top of Radix + Tailwind. Lost because adopting Tailwind is itself a repo-wide migration with its own cost, and we already have a working tokens-based CSS system. Could revisit only as part of a separate "adopt Tailwind" decision.                                                          |
+| **Chakra UI v3**                            | Web-app aesthetic, large bundle, heavier default opinion than Mantine. Wrong vibe for a desktop tool.                                                                                                                                                                                                                      |
+| **MUI v6**                                  | Material aesthetic — wrong for an engineering tool. Heavy bundle. Hard to brand away from.                                                                                                                                                                                                                                 |
+| **Ant Design v5**                           | Enterprise/dense feel is closer to fit, but global override pattern, very high design lock-in, China-locale defaults that need extra work.                                                                                                                                                                                 |
+| **Fluent UI v9** (Microsoft)                | OK density but heavy and Microsoft-y. Hard to escape the look.                                                                                                                                                                                                                                                             |
+| **Base UI** (MUI team)                      | Sibling-in-spirit to Radix but smaller primitive coverage and earlier maturity.                                                                                                                                                                                                                                            |
+| **Tremor / Catalyst / Geist / Tailwind UI** | Dashboard or marketing focus. Not desktop tool.                                                                                                                                                                                                                                                                            |
 
 ## Why Radix wins for KiForge
 
@@ -59,6 +59,7 @@ Each of those is a separate later ADR, not part of this decision.
 ## Adoption plan
 
 **Phase A — install + Dialog (1 PR)**
+
 - `bun add @radix-ui/react-dialog`.
 - Build `src/components/ui/Dialog.tsx` wrapper.
 - Replace the `window.confirm("Delete \"<name>\"?")` in `ProjectsPage` with a styled confirmation Dialog.
@@ -66,17 +67,18 @@ Each of those is a separate later ADR, not part of this decision.
 
 **Phase B — expand primitive set (parallel engineer PRs, 1 primitive per PR)**
 
-| # | Primitive | Wrapper | First consumer |
-|---|---|---|---|
-| 1 | Dropdown menu | `src/components/ui/DropdownMenu.tsx` | Replace `AccountMenu` |
-| 2 | Tooltip | `src/components/ui/Tooltip.tsx` | Inline help on Edit identity form fields + status pins on connections page |
-| 3 | Tabs | `src/components/ui/Tabs.tsx` | Workspace step nav, alongside the chevron progress strip (not replacing it yet) |
-| 4 | Select | `src/components/ui/Select.tsx` | Controller picker in Edit identity + New Project form |
-| 5 | Toast / Notification (deferred) | TBD | Replace ad-hoc export toast |
+| #   | Primitive                       | Wrapper                              | First consumer                                                                  |
+| --- | ------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
+| 1   | Dropdown menu                   | `src/components/ui/DropdownMenu.tsx` | Replace `AccountMenu`                                                           |
+| 2   | Tooltip                         | `src/components/ui/Tooltip.tsx`      | Inline help on Edit identity form fields + status pins on connections page      |
+| 3   | Tabs                            | `src/components/ui/Tabs.tsx`         | Workspace step nav, alongside the chevron progress strip (not replacing it yet) |
+| 4   | Select                          | `src/components/ui/Select.tsx`       | Controller picker in Edit identity + New Project form                           |
+| 5   | Toast / Notification (deferred) | TBD                                  | Replace ad-hoc export toast                                                     |
 
 Each Phase B PR is small, has one new wrapper, one consumer swap, one set of tests. No PR cross-touches another primitive.
 
 **Phase C — non-Radix primitives (case-by-case, separate ADRs each)**
+
 - `@tanstack/react-table` when catalog grows beyond the current list of 5.
 - `cmdk` when we want a command palette.
 - `sonner` when we want real toast infrastructure.

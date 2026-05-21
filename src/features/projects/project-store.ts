@@ -7,10 +7,18 @@ import type {
   CreateProjectInput,
   ProjectDocument,
   ProjectExportResult,
+  VoltageDomain,
   WorkspaceProject
 } from "../../types/domain";
 import { resolveProjectDocument, sortProjects } from "./project-mappers";
 import { getProjectService } from "./project-service";
+
+export interface ProjectIdentityUpdates {
+  description?: string;
+  controllerId?: string;
+  voltageDomain?: VoltageDomain;
+  template?: string;
+}
 
 const ACTIVE_PROJECT_STORAGE_KEY = "kiforge.active-project-id.v1";
 
@@ -35,6 +43,9 @@ interface WorkspaceState extends WorkspaceSnapshot {
   ) => Promise<WorkspaceProject | null>;
   saveCurrentProject: () => Promise<void>;
   renameProject: (projectId: string, name: string) => Promise<void>;
+  updateCurrentProjectIdentity: (
+    updates: ProjectIdentityUpdates
+  ) => Promise<void>;
   duplicateProject: (
     projectId: string,
     name?: string
@@ -308,6 +319,43 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     try {
       await persistProjectDocument(set, currentProjectDocument);
+    } catch (error) {
+      set({
+        isSaving: false,
+        errorMessage: toErrorMessage(error)
+      });
+    }
+  },
+
+  async updateCurrentProjectIdentity(updates) {
+    const currentProjectDocument = get().currentProjectDocument;
+    if (!currentProjectDocument) {
+      return;
+    }
+
+    const nextProject: ProjectDocument = {
+      ...currentProjectDocument,
+      ...(updates.description !== undefined
+        ? { description: updates.description.trim() }
+        : {}),
+      ...(updates.controllerId !== undefined
+        ? { controllerId: updates.controllerId }
+        : {}),
+      ...(updates.voltageDomain !== undefined
+        ? { voltageDomain: updates.voltageDomain }
+        : {}),
+      ...(updates.template !== undefined ? { template: updates.template } : {})
+    };
+
+    if (nextProject.description.length === 0) {
+      set({ errorMessage: "Project description cannot be empty." });
+      return;
+    }
+
+    set({ isSaving: true, errorMessage: null });
+
+    try {
+      await persistProjectDocument(set, nextProject);
     } catch (error) {
       set({
         isSaving: false,
