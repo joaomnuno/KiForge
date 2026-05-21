@@ -30,7 +30,6 @@ export function SettingsPage() {
   return (
     <AppScaffold
       activeNav="settings"
-      searchPlaceholder="Search preferences..."
       inspector={
         <>
           <Panel

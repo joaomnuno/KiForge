@@ -76,7 +76,6 @@ export function NewProjectPage() {
   return (
     <AppScaffold
       activeNav="projects"
-      searchPlaceholder="Search controllers, templates, or recent projects..."
       inspector={
         <>
           {selectedController ? (

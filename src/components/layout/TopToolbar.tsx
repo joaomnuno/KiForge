@@ -3,10 +3,21 @@ import { getRuntimeLabel } from "../../lib/runtime";
 import { AccountMenu } from "./AccountMenu";
 
 interface TopToolbarProps {
-  searchPlaceholder: string;
+  searchPlaceholder?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
-export function TopToolbar({ searchPlaceholder }: TopToolbarProps) {
+const unsupportedSearchPlaceholder =
+  "Search is per-page; only Projects supports it today.";
+
+export function TopToolbar({
+  searchPlaceholder,
+  searchValue,
+  onSearchChange
+}: TopToolbarProps) {
+  const searchEnabled = onSearchChange !== undefined;
+
   return (
     <header className="topbar">
       <div className="topbar__group">
@@ -16,7 +27,19 @@ export function TopToolbar({ searchPlaceholder }: TopToolbarProps) {
           <input
             className="topbar__search-input"
             type="search"
-            placeholder={searchPlaceholder}
+            aria-label={
+              searchEnabled ? "Search projects" : "Search unavailable"
+            }
+            onChange={
+              searchEnabled
+                ? (event) => onSearchChange(event.target.value)
+                : undefined
+            }
+            placeholder={
+              searchEnabled ? searchPlaceholder : unsupportedSearchPlaceholder
+            }
+            readOnly={!searchEnabled}
+            value={searchEnabled ? (searchValue ?? "") : ""}
           />
         </label>
       </div>
