@@ -3,6 +3,7 @@ import { Link, Navigate, Outlet } from "react-router-dom";
 import clsx from "clsx";
 import { Button } from "../../components/ui/Button";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { Tooltip } from "../../components/ui/Tooltip";
 import { isTauriRuntime } from "../../lib/runtime";
 import { useWorkspaceStore } from "../projects/project-store";
 import {
@@ -43,13 +44,38 @@ export function ProjectShell() {
     progress,
     Boolean(currentProject.lastExportedAt)
   );
-  // Gate the export button on every step EXCEPT export being complete.
-  // (Gating on derivedStatus === "Ready to Generate" would be circular —
-  // that status only resolves after an export already happened.)
   const canExport = progress.steps.every(
     (step) => step.id === "export" || step.status === "complete"
   );
   const canExportInRuntime = isDesktopRuntime && canExport;
+  const exportBlockReason = !isDesktopRuntime
+    ? "Open the desktop app to export KiCad bundles."
+    : !canExport
+      ? "Resolve every step (no errors, every device connected) before exporting"
+      : isExporting
+        ? "Export is already running"
+        : null;
+  const exportButton = (
+    <Button
+      variant="primary"
+      disabled={!canExportInRuntime || isExporting}
+      onClick={() => {
+        if (!canExportInRuntime) {
+          return;
+        }
+        void exportKicadBundleForCurrentProject();
+      }}
+      title={
+        !isDesktopRuntime
+          ? "Open the desktop app to export KiCad bundles."
+          : canExport
+            ? "Write the KiCad starter bundle into the project's kicad/ directory"
+            : "Resolve every step (no errors, every device connected) before exporting"
+      }
+    >
+      {isExporting ? "Exporting..." : "Export KiCad bundle"}
+    </Button>
+  );
 
   return (
     <div className="project-shell">
@@ -71,26 +97,19 @@ export function ProjectShell() {
           <Button variant="secondary" onClick={() => void saveCurrentProject()}>
             {isSaving ? "Saving..." : "Save Project"}
           </Button>
-          <Button
-            variant="primary"
-            disabled={!canExportInRuntime || isExporting}
-            onClick={() => {
-              if (!canExportInRuntime) {
-                return;
-              }
-
-              void exportKicadBundleForCurrentProject();
-            }}
-            title={
-              !isDesktopRuntime
-                ? "Open the desktop app to export KiCad bundles."
-                : canExport
-                  ? "Write the KiCad starter bundle into the project's kicad/ directory"
-                  : "Resolve every step (no errors, every device connected) before exporting"
-            }
-          >
-            {isExporting ? "Exporting..." : "Export KiCad bundle"}
-          </Button>
+          {exportBlockReason ? (
+            <Tooltip content={exportBlockReason} side="bottom">
+              <span
+                aria-label="Export KiCad bundle"
+                className="tooltip__trigger-wrapper tooltip__trigger-wrapper--disabled"
+                tabIndex={0}
+              >
+                {exportButton}
+              </span>
+            </Tooltip>
+          ) : (
+            exportButton
+          )}
         </div>
       </header>
 
