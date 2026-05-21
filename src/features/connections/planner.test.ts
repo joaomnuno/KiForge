@@ -298,4 +298,41 @@ describe("connection planner", () => {
       optionalUnresolved: 0
     });
   });
+
+  it("surfaces a voltage-domain warning for a 3.3V-only part on a 5V project", () => {
+    const derivedProject = applyDerivedProjectState({
+      ...makeProjectDocument(),
+      voltageDomain: "5V"
+    });
+    const voltageWarnings = derivedProject.issues.filter(
+      (issue) =>
+        issue.severity === "warning" && issue.id.endsWith("-voltage-mismatch")
+    );
+    // Both flash (W25Q128JV: 2.7V-3.6V) and imu (ICM-42688-P: 1.71V-3.6V)
+    // exclude 5V, so each component gets a warning.
+    expect(voltageWarnings).toHaveLength(2);
+    expect(voltageWarnings.map((issue) => issue.id).sort()).toEqual([
+      "flash-voltage-mismatch",
+      "imu-voltage-mismatch"
+    ]);
+  });
+
+  it("emits no voltage warnings when the project domain is Mixed", () => {
+    const derivedProject = applyDerivedProjectState({
+      ...makeProjectDocument(),
+      voltageDomain: "Mixed"
+    });
+    const voltageWarnings = derivedProject.issues.filter((issue) =>
+      issue.id.endsWith("-voltage-mismatch")
+    );
+    expect(voltageWarnings).toEqual([]);
+  });
+
+  it("emits no voltage warnings on the default 3.3V project (all parts compatible)", () => {
+    const derivedProject = applyDerivedProjectState(makeProjectDocument());
+    const voltageWarnings = derivedProject.issues.filter((issue) =>
+      issue.id.endsWith("-voltage-mismatch")
+    );
+    expect(voltageWarnings).toEqual([]);
+  });
 });
