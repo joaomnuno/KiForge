@@ -10,15 +10,24 @@
  * KiCad opens it cleanly. Pass `symbols`/`wires` to embed placed
  * content — the next slice maps a project's controller + connections
  * into those arrays.
+ *
+ * Pass `vendoredSymbols` to inline the bodies of any placed symbols
+ * whose `lib_id` matches a key in the map. The bodies are pushed into
+ * the schematic's `(lib_symbols ...)` block before placed symbols, and
+ * deduped by symbol name. When the map is absent the `(lib_symbols ...)`
+ * block stays empty - the existing pre-vendoring behavior.
  */
 
 import {
+  findChild,
+  head,
   schematicHeader,
   stringify,
   symbolNode,
   wireNode,
   type SchematicSymbol,
-  type SchematicWire
+  type SchematicWire,
+  type SList
 } from "../../lib/kicad";
 import type { ProjectDocument } from "../../types/domain";
 
@@ -31,11 +40,56 @@ export interface KicadBundleOptions {
   symbols?: SchematicSymbol[];
   /** Wires to add to the schematic. Empty by default. */
   wires?: SchematicWire[];
+  /**
+   * Parsed vendored symbol bodies keyed by `lib_id`. Any placed symbol
+   * whose `libId` matches a key has the corresponding body inlined into
+   * the schematic's `(lib_symbols ...)` block. When absent,
+   * `(lib_symbols ...)` stays empty.
+   */
+  vendoredSymbols?: Map<string, SList>;
 }
 
 export type KicadBundleFiles = Record<string, string>;
 
 const KICAD_PRO_SCHEMA_VERSION = 1;
+
+function collectVendoredSymbolNodes(
+  symbols: readonly SchematicSymbol[],
+  vendoredSymbols: Map<string, SList>
+): SList[] {
+  const placedLibIds = new Set<string>();
+  for (const placed of symbols) {
+    if (vendoredSymbols.has(placed.libId)) {
+      placedLibIds.add(placed.libId);
+    }
+  }
+  const nodesBySymbolName = new Map<string, SList>();
+  for (const libId of Array.from(placedLibIds).sort()) {
+    const body = vendoredSymbols.get(libId);
+    if (body === undefined) {
+      throw new Error(
+        `Vendored symbol body for "${libId}" disappeared between lookup and insert`
+      );
+    }
+
+    if (head(body)?.value !== "symbol") {
+      throw new Error(
+        `Vendored symbol body for "${libId}" must be a (symbol ...) list`
+      );
+    }
+    const nameNode = body.items[1];
+    if (!nameNode || nameNode.kind !== "string") {
+      throw new Error(
+        `Vendored symbol body for "${libId}" is missing a symbol name`
+      );
+    }
+    if (!nodesBySymbolName.has(nameNode.value)) {
+      nodesBySymbolName.set(nameNode.value, body);
+    }
+  }
+
+  return Array.from(nodesBySymbolName.values());
+}
 
 export function buildKicadBundle(
   project: ProjectDocument,
@@ -46,8 +100,22 @@ export function buildKicadBundle(
   const generator = options.generator ?? "kiforge";
   const symbols = options.symbols ?? [];
   const wires = options.wires ?? [];
+  const vendoredSymbols = options.vendoredSymbols;
 
   const root = schematicHeader({ uuid, generator });
+
+  if (vendoredSymbols && vendoredSymbols.size > 0) {
+    const libSymbols = findChild(root, "lib_symbols");
+    if (!libSymbols) {
+      throw new Error(
+        "Schematic header missing (lib_symbols ...) block; cannot inline vendored symbols"
+      );
+    }
+    for (const node of collectVendoredSymbolNodes(symbols, vendoredSymbols)) {
+      libSymbols.items.push(node);
+    }
+  }
+
   for (const symbol of symbols) {
     root.items.push(symbolNode(symbol));
   }

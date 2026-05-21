@@ -137,6 +137,11 @@ export interface ComponentCatalogEntry {
    * separate ADR will cover catalog symbol vendoring).
    */
   kicadLibId?: string;
+  /**
+   * Path relative to the repository root for a vendored `.kicad_sym`
+   * file, e.g. `catalog/symbols/snapeda/BMP388.kicad_sym`.
+   */
+  vendoredSymbolPath?: string;
   supportedProtocols: Protocol[];
   connectionOptions: ComponentConnectionOption[];
 }
