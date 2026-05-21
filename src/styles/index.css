@@ -722,6 +722,69 @@ button {
   }
 }
 
+.tabs__list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--outline-ghost);
+}
+
+.tabs__trigger {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 10px 14px;
+  font-weight: 700;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.tabs__trigger::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -1px;
+  height: 2px;
+  background: transparent;
+}
+
+.tabs__trigger:hover {
+  color: var(--text);
+  background: rgba(53, 53, 52, 0.32);
+}
+
+.tabs__trigger:focus-visible {
+  outline: 1px solid rgba(102, 217, 204, 0.65);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.tabs__trigger--active {
+  color: var(--primary);
+}
+
+.tabs__trigger--active::after {
+  background: var(--primary);
+}
+
+.tabs__panel {
+  padding-top: 16px;
+}
+
+.tabs__panel:focus {
+  outline: none;
+}
+
+.tabs__panel:focus-visible {
+  border-radius: var(--radius-md);
+  outline: 1px solid rgba(102, 217, 204, 0.45);
+  outline-offset: 4px;
+}
+
 .panel {
   border-radius: var(--radius-lg);
   background: rgba(28, 27, 27, 0.92);
