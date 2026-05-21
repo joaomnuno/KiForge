@@ -4,16 +4,23 @@ import clsx from "clsx";
 import { Button } from "../../components/ui/Button";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useWorkspaceStore } from "../projects/project-store";
-import { getProjectProgress } from "../projects/project-progress";
+import {
+  deriveProjectStatus,
+  getProjectProgress
+} from "../projects/project-progress";
 import { ProjectProgressStrip } from "./ProjectProgressStrip";
 import type { ProjectShellContext } from "./project-shell-context";
 
 export function ProjectShell() {
   const currentProject = useWorkspaceStore((state) => state.currentProject);
   const isSaving = useWorkspaceStore((state) => state.isSaving);
+  const isExporting = useWorkspaceStore((state) => state.isExporting);
   const exportResult = useWorkspaceStore((state) => state.exportResult);
   const saveCurrentProject = useWorkspaceStore(
     (state) => state.saveCurrentProject
+  );
+  const exportKicadBundleForCurrentProject = useWorkspaceStore(
+    (state) => state.exportKicadBundleForCurrentProject
   );
 
   const [inspector, setInspectorState] = useState<ReactNode | null>(null);
@@ -30,6 +37,16 @@ export function ProjectShell() {
   }
 
   const progress = getProjectProgress(currentProject, exportResult);
+  const derivedStatus = deriveProjectStatus(
+    progress,
+    exportResult != null && exportResult.projectId === currentProject.id
+  );
+  // Gate the export button on every step EXCEPT export being complete.
+  // (Gating on derivedStatus === "Ready to Generate" would be circular —
+  // that status only resolves after an export already happened.)
+  const canExport = progress.steps.every(
+    (step) => step.id === "export" || step.status === "complete"
+  );
 
   return (
     <div className="project-shell">
@@ -47,9 +64,21 @@ export function ProjectShell() {
           </div>
         </div>
         <div className="project-shell__actions">
-          <StatusBadge label={currentProject.status} />
+          <StatusBadge label={derivedStatus} />
           <Button variant="secondary" onClick={() => void saveCurrentProject()}>
             {isSaving ? "Saving..." : "Save Project"}
+          </Button>
+          <Button
+            variant="primary"
+            disabled={!canExport || isExporting}
+            onClick={() => void exportKicadBundleForCurrentProject()}
+            title={
+              canExport
+                ? "Write the KiCad starter bundle into the project's kicad/ directory"
+                : "Resolve every step (no errors, every device connected) before exporting"
+            }
+          >
+            {isExporting ? "Exporting..." : "Export KiCad bundle"}
           </Button>
         </div>
       </header>

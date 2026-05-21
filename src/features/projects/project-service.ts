@@ -16,6 +16,15 @@ export interface ProjectService {
   ) => Promise<ProjectDocument>;
   deleteProject: (projectId: string) => Promise<void>;
   exportProject: (projectId: string) => Promise<string>;
+  /**
+   * Write a KiCad starter bundle (filename → contents map) into the
+   * project's `kicad/` subdirectory. Returns the absolute path of that
+   * directory. Desktop-only; the browser fallback rejects.
+   */
+  writeKicadBundle: (
+    projectId: string,
+    files: Record<string, string>
+  ) => Promise<string>;
 }
 
 function slugify(value: string) {
@@ -188,6 +197,12 @@ const browserProjectService: ProjectService = {
   async exportProject(projectId) {
     const project = await browserProjectService.loadProject(projectId);
     return makeProjectDataUrl(project);
+  },
+
+  async writeKicadBundle() {
+    throw new Error(
+      "Writing a KiCad bundle requires the desktop app — the web preview cannot write files."
+    );
   }
 };
 
@@ -239,6 +254,10 @@ const tauriProjectService: ProjectService = {
 
   async exportProject(projectId) {
     return invokeTauri<string>("export_project", { projectId });
+  },
+
+  async writeKicadBundle(projectId, files) {
+    return invokeTauri<string>("write_kicad_bundle", { projectId, files });
   }
 };
 

@@ -1,11 +1,17 @@
 import { useEffect, type ReactElement } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { ProjectShell } from "./ProjectShell";
 import { useProjectShell } from "./project-shell-context";
 import { useWorkspaceStore } from "../projects/project-store";
-import type { WorkspaceProject } from "../../types/domain";
+import type {
+  ProjectExportResult,
+  WorkspaceConnection,
+  WorkspaceProject,
+  WorkspaceProjectComponent
+} from "../../types/domain";
 
 function fakeProject(): WorkspaceProject {
   return {
@@ -82,5 +88,122 @@ describe("ProjectShell inspector slot", () => {
     expect(
       screen.getByRole("complementary", { name: "Project inspector" })
     ).toBeInTheDocument();
+  });
+});
+
+function fakeComponent(
+  id: string,
+  instanceName = id
+): WorkspaceProjectComponent {
+  return {
+    id,
+    catalogId: `${id}-catalog`,
+    instanceName,
+    status: "Connected",
+    preferredProtocol: "SPI",
+    part: {
+      id: `${id}-catalog`,
+      name: id.toUpperCase(),
+      categoryId: "sensor",
+      categoryLabel: "Sensor",
+      summary: "",
+      voltage: "3.3V",
+      packageName: "SOP-8",
+      supportedProtocols: ["SPI"],
+      connectionOptions: []
+    },
+    partName: id.toUpperCase(),
+    supportedProtocols: ["SPI"]
+  };
+}
+
+function fakeValidConnection(
+  id: string,
+  componentId: string
+): WorkspaceConnection {
+  return {
+    id,
+    componentId,
+    protocol: "SPI",
+    controllerInterface: "SPI1",
+    pins: ["PA5", "PA6", "PA7"],
+    busMode: "Dedicated",
+    optionalSignals: [],
+    status: "Valid",
+    assignments: [
+      {
+        signal: "SCK",
+        selectedPin: "PA5",
+        alternatePins: ["PA5"],
+        status: "Valid"
+      }
+    ],
+    name: componentId,
+    peerPart: componentId
+  };
+}
+
+function readyExportResultFor(projectId: string): ProjectExportResult {
+  return {
+    projectId,
+    projectName: "Rocket FC",
+    fileName: `${projectId}.kicad_pro`,
+    target: "/tmp/kicad",
+    kind: "file-path",
+    message: "ok",
+    exportedAt: "2026-05-21T00:00:00.000Z"
+  };
+}
+
+describe("ProjectShell export button", () => {
+  it("renders the Export button disabled when the project is not Ready to Generate", () => {
+    renderShellWith(<p>main content</p>);
+    const button = screen.getByRole("button", { name: /Export KiCad bundle/i });
+    expect(button).toBeDisabled();
+  });
+
+  it("renders the Export button enabled when the project is Ready to Generate", () => {
+    useWorkspaceStore.setState({
+      currentProject: {
+        ...fakeProject(),
+        components: [fakeComponent("flash", "Flash")],
+        connections: [fakeValidConnection("c1", "flash")]
+      }
+    });
+    renderShellWith(<p>main content</p>);
+    const button = screen.getByRole("button", { name: /Export KiCad bundle/i });
+    expect(button).toBeEnabled();
+  });
+
+  it("invokes the store's KiCad bundle action when clicked", async () => {
+    const action = vi.fn().mockResolvedValue(null);
+    useWorkspaceStore.setState({
+      currentProject: {
+        ...fakeProject(),
+        components: [fakeComponent("flash", "Flash")],
+        connections: [fakeValidConnection("c1", "flash")]
+      },
+      exportKicadBundleForCurrentProject: action
+    });
+    renderShellWith(<p>main content</p>);
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole("button", { name: /Export KiCad bundle/i })
+    );
+    expect(action).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the derived status (not the stored ProjectDocument.status) in the header badge", () => {
+    useWorkspaceStore.setState({
+      currentProject: {
+        ...fakeProject(),
+        status: "Draft", // stored
+        components: [fakeComponent("flash", "Flash")],
+        connections: [fakeValidConnection("c1", "flash")]
+      },
+      exportResult: readyExportResultFor("rocket-fc")
+    });
+    renderShellWith(<p>main content</p>);
+    expect(screen.getByText("Generated")).toBeInTheDocument();
   });
 });
