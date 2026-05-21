@@ -112,6 +112,12 @@ export interface ComponentCatalogEntry {
   summary: string;
   voltage: string;
   packageName: string;
+  /**
+   * 7-bit I2C device address, hex-encoded with `0x` prefix (e.g. `"0x76"`).
+   * Optional: only set on components that have a fixed (or default
+   * configurable) I2C address. Used by the I2C-address-conflict validator.
+   */
+  i2cAddress?: string;
   supportedProtocols: Protocol[];
   connectionOptions: ComponentConnectionOption[];
 }

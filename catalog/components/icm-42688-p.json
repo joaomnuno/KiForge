@@ -6,6 +6,7 @@
   "summary": "6-axis IMU with low-noise accel and gyro readings.",
   "voltage": "1.71V - 3.6V",
   "packageName": "QFN-14",
+  "i2cAddress": "0x68",
   "supportedProtocols": ["SPI", "I2C", "GPIO"],
   "connectionOptions": [
     {

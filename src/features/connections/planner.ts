@@ -3,6 +3,7 @@ import {
   findControllerInterface
 } from "../catalog/catalog";
 import { resolveProjectDocument } from "../projects/project-mappers";
+import { validateI2cAddressConflicts } from "./i2c-address-validation";
 import { validateVoltageCompatibility } from "./voltage-validation";
 import type {
   BusMode,
@@ -956,6 +957,7 @@ export function applyDerivedProjectState(project: ProjectDocument) {
   });
 
   issues.push(...validateVoltageCompatibility(workspace));
+  issues.push(...validateI2cAddressConflicts(workspace));
 
   const nextProject: ProjectDocument = {
     ...project,

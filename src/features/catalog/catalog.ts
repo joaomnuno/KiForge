@@ -41,6 +41,8 @@ const controllerSchema = z.object({
   gpioPins: z.array(z.string().min(1)).min(1)
 });
 
+const I2C_ADDRESS_PATTERN = /^0x[0-9a-fA-F]{2}$/;
+
 const componentSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -49,6 +51,10 @@ const componentSchema = z.object({
   summary: z.string().min(1),
   voltage: z.string().min(1),
   packageName: z.string().min(1),
+  i2cAddress: z
+    .string()
+    .regex(I2C_ADDRESS_PATTERN, "i2cAddress must be a hex byte like 0x76")
+    .optional(),
   supportedProtocols: z.array(protocolSchema).min(1),
   connectionOptions: z.array(componentConnectionOptionSchema)
 });
