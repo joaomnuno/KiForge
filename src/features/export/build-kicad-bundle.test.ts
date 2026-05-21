@@ -249,8 +249,8 @@ describe("buildKicadBundle", () => {
 
   it("embeds the vendored TagConnect catalog symbol body", () => {
     const libId = "TagConnect:Conn_ARM_SWD_TagConnect_TC2030";
-    const rawBody = loadVendoredSymbols().get(libId);
-    if (!rawBody) {
+    const body = loadVendoredSymbols().get(libId);
+    if (!body) {
       throw new Error(`Missing vendored body for ${libId}`);
     }
 
@@ -262,7 +262,7 @@ describe("buildKicadBundle", () => {
     };
     const files = buildKicadBundle(mkProject(), {
       symbols: [symbol],
-      vendoredSymbols: new Map([[libId, parse(rawBody)]])
+      vendoredSymbols: new Map([[libId, body]])
     });
     const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
     const libSymbols = findChild(root, "lib_symbols");
