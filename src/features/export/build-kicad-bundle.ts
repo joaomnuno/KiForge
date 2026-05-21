@@ -3,15 +3,23 @@
  *
  * Pure function: takes a `ProjectDocument`, returns
  * `{ "<id>.kicad_sch": "...", "<id>.kicad_pro": "..." }`. The Tauri
- * side will accept this map and write each entry atomically next to
- * `project.json` (separate PR).
+ * side accepts this map and writes each entry atomically next to
+ * `project.json` (separate slice).
  *
- * Today's slice emits a valid-but-empty schematic — header only, no
- * symbol placement, no wires. KiCad opens it cleanly. Symbol placement
- * lands when the .kicad_sch semantic walker does.
+ * Without `symbols`/`wires` options the schematic is header-only and
+ * KiCad opens it cleanly. Pass `symbols`/`wires` to embed placed
+ * content — the next slice maps a project's controller + connections
+ * into those arrays.
  */
 
-import { schematicHeader, stringify } from "../../lib/kicad";
+import {
+  schematicHeader,
+  stringify,
+  symbolNode,
+  wireNode,
+  type SchematicSymbol,
+  type SchematicWire
+} from "../../lib/kicad";
 import type { ProjectDocument } from "../../types/domain";
 
 export interface KicadBundleOptions {
@@ -19,6 +27,10 @@ export interface KicadBundleOptions {
   schematicUuid?: string;
   /** Override the `generator` field written into the schematic. */
   generator?: string;
+  /** Symbols to place in the schematic. Empty by default. */
+  symbols?: SchematicSymbol[];
+  /** Wires to add to the schematic. Empty by default. */
+  wires?: SchematicWire[];
 }
 
 export type KicadBundleFiles = Record<string, string>;
@@ -32,8 +44,18 @@ export function buildKicadBundle(
   const baseName = project.id;
   const uuid = options.schematicUuid ?? crypto.randomUUID();
   const generator = options.generator ?? "kiforge";
+  const symbols = options.symbols ?? [];
+  const wires = options.wires ?? [];
 
-  const sch = stringify(schematicHeader({ uuid, generator }));
+  const root = schematicHeader({ uuid, generator });
+  for (const symbol of symbols) {
+    root.items.push(symbolNode(symbol));
+  }
+  for (const wire of wires) {
+    root.items.push(wireNode(wire));
+  }
+
+  const sch = stringify(root);
 
   const pro =
     JSON.stringify(
