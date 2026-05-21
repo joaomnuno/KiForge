@@ -2,7 +2,7 @@ import { useEffect, type ReactElement } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { ProjectShell } from "./ProjectShell";
 import { useProjectShell } from "./project-shell-context";
 import { useWorkspaceStore } from "../projects/project-store";
@@ -56,11 +56,20 @@ function renderShellWith(child: ReactElement) {
 }
 
 beforeEach(() => {
+  Object.defineProperty(window, "__TAURI_INTERNALS__", {
+    configurable: true,
+    value: {}
+  });
+
   useWorkspaceStore.setState({
     currentProject: fakeProject(),
     isSaving: false,
     exportResult: null
   });
+});
+
+afterEach(() => {
+  Reflect.deleteProperty(window, "__TAURI_INTERNALS__");
 });
 
 describe("ProjectShell inspector slot", () => {
@@ -163,6 +172,24 @@ describe("ProjectShell export button", () => {
     renderShellWith(<p>main content</p>);
     const button = screen.getByRole("button", { name: /Export KiCad bundle/i });
     expect(button).toBeEnabled();
+  });
+
+  it("renders the Export button disabled in web preview", () => {
+    Reflect.deleteProperty(window, "__TAURI_INTERNALS__");
+    useWorkspaceStore.setState({
+      currentProject: {
+        ...fakeProject(),
+        components: [fakeComponent("flash", "Flash")],
+        connections: [fakeValidConnection("c1", "flash")]
+      }
+    });
+    renderShellWith(<p>main content</p>);
+    const button = screen.getByRole("button", { name: /Export KiCad bundle/i });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute(
+      "title",
+      "Open the desktop app to export KiCad bundles."
+    );
   });
 
   it("invokes the store's KiCad bundle action when clicked", async () => {

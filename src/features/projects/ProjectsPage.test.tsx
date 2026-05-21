@@ -1,10 +1,15 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkspaceProject } from "../../types/domain";
 import { ProjectsPage } from "./ProjectsPage";
 import { useWorkspaceStore } from "./project-store";
+
+vi.mock("../../lib/runtime", () => ({
+  getRuntimeLabel: () => "Web preview",
+  isTauriRuntime: () => false
+}));
 
 function fakeProject(
   overrides: Partial<WorkspaceProject> = {}
@@ -91,6 +96,22 @@ beforeEach(() => {
     isExporting: false,
     errorMessage: null,
     exportResult: null
+  });
+});
+
+describe("ProjectsPage web preview", () => {
+  it("disables project deletion when not in the Tauri runtime", () => {
+    renderProjectsPage();
+
+    const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
+    expect(deleteButtons.length).toBeGreaterThan(0);
+    for (const deleteButton of deleteButtons) {
+      expect(deleteButton).toBeDisabled();
+      expect(deleteButton).toHaveAttribute(
+        "title",
+        "Open the desktop app to delete projects."
+      );
+    }
   });
 });
 

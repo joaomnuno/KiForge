@@ -1,4 +1,5 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
+import { WebPreviewBanner } from "../components/layout/WebPreviewBanner";
 import { ProjectsPage } from "../features/projects/ProjectsPage";
 import { NewProjectPage } from "../features/projects/NewProjectPage";
 import { ComponentsPage } from "../features/components/ComponentsPage";
@@ -15,23 +16,32 @@ export function App() {
 
   return (
     <HashRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/projects" replace />} />
-        <Route path="/projects" element={<ProjectsPage />} />
-        <Route path="/projects/new" element={<NewProjectPage />} />
-        <Route path="/templates" element={<TemplatesPage />} />
-        <Route path="/library" element={<LibraryPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route element={<ProjectShell />}>
-          <Route
-            path="/workspace"
-            element={<Navigate to="/workspace/overview" replace />}
-          />
-          <Route path="/workspace/overview" element={<ProjectOverviewPage />} />
-          <Route path="/workspace/components" element={<ComponentsPage />} />
-          <Route path="/workspace/connections" element={<ConnectionsPage />} />
-        </Route>
-      </Routes>
+      <div className="app-root">
+        <WebPreviewBanner />
+        <Routes>
+          <Route path="/" element={<Navigate to="/projects" replace />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/projects/new" element={<NewProjectPage />} />
+          <Route path="/templates" element={<TemplatesPage />} />
+          <Route path="/library" element={<LibraryPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route element={<ProjectShell />}>
+            <Route
+              path="/workspace"
+              element={<Navigate to="/workspace/overview" replace />}
+            />
+            <Route
+              path="/workspace/overview"
+              element={<ProjectOverviewPage />}
+            />
+            <Route path="/workspace/components" element={<ComponentsPage />} />
+            <Route
+              path="/workspace/connections"
+              element={<ConnectionsPage />}
+            />
+          </Route>
+        </Routes>
+      </div>
     </HashRouter>
   );
 }
