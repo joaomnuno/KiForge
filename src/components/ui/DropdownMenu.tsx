@@ -1,6 +1,7 @@
 import * as RadixDropdownMenu from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
+import "./DropdownMenu.css";
 
 type DropdownMenuContentProps = ComponentPropsWithoutRef<
   typeof RadixDropdownMenu.Content

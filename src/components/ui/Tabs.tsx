@@ -7,6 +7,7 @@ import {
   useState,
   type ComponentPropsWithoutRef
 } from "react";
+import "./Tabs.css";
 
 /**
  * Tokenized wrapper around `@radix-ui/react-tabs`.

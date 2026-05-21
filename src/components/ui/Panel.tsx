@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import clsx from "clsx";
+import "./Panel.css";
 
 interface PanelProps extends HTMLAttributes<HTMLDivElement> {
   eyebrow?: string;

@@ -2,6 +2,7 @@ import * as RadixDialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import { Button } from "./Button";
+import "./Dialog.css";
 
 /**
  * Tokenized wrapper around `@radix-ui/react-dialog`.

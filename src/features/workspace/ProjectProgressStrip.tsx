@@ -4,6 +4,7 @@ import type {
   ProjectProgress,
   ProjectStepId
 } from "../projects/project-progress";
+import "./ProjectProgressStrip.css";
 
 interface ProjectProgressStripProps {
   progress: ProjectProgress;
