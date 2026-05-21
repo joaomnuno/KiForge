@@ -47,10 +47,7 @@ export function LibraryPage() {
   const componentCount = catalog.components.length;
 
   return (
-    <AppScaffold
-      activeNav="library"
-      searchPlaceholder="Search controllers and components..."
-    >
+    <AppScaffold activeNav="library">
       <div className="page-stack">
         <section className="page-hero">
           <div>

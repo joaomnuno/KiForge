@@ -6,7 +6,9 @@ import { ProjectStrip } from "./ProjectStrip";
 
 interface AppScaffoldProps {
   activeNav: string;
-  searchPlaceholder: string;
+  searchPlaceholder?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
   projectStrip?: {
     name: string;
     controller: string;
@@ -22,6 +24,8 @@ interface AppScaffoldProps {
 export function AppScaffold({
   activeNav,
   searchPlaceholder,
+  searchValue,
+  onSearchChange,
   projectStrip,
   inspector,
   children
@@ -30,7 +34,11 @@ export function AppScaffold({
     <div className="shell">
       <AppSidebar items={appNavigation} activeKey={activeNav} />
       <div className="shell__content">
-        <TopToolbar searchPlaceholder={searchPlaceholder} />
+        <TopToolbar
+          searchPlaceholder={searchPlaceholder}
+          searchValue={searchValue}
+          onSearchChange={onSearchChange}
+        />
         {projectStrip ? <ProjectStrip {...projectStrip} /> : null}
         <div
           className={
