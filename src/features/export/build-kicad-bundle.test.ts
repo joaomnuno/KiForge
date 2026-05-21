@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { buildKicadBundle } from "./build-kicad-bundle";
-import { findChild, head, parse, parseKicadPro } from "../../lib/kicad";
+import {
+  findChild,
+  findChildren,
+  head,
+  parse,
+  parseKicadPro,
+  readSchematic,
+  type SchematicSymbol,
+  type SchematicWire
+} from "../../lib/kicad";
 import type { ProjectDocument } from "../../types/domain";
 
 function mkProject(over: Partial<ProjectDocument> = {}): ProjectDocument {
@@ -78,5 +87,80 @@ describe("buildKicadBundle", () => {
     const files = buildKicadBundle(mkProject({ id: "telemetry-node-v2" }));
     const doc = parseKicadPro(files["telemetry-node-v2.kicad_pro"]);
     expect(doc.meta.filename).toBe("telemetry-node-v2.kicad_pro");
+  });
+
+  it("emits no symbols or wires when neither option is provided", () => {
+    const files = buildKicadBundle(mkProject());
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    expect(findChildren(root, "symbol")).toHaveLength(0);
+    expect(findChildren(root, "wire")).toHaveLength(0);
+  });
+
+  it("embeds placed symbols passed via options", () => {
+    const symbol: SchematicSymbol = {
+      libId: "MCU_ST_STM32F4:STM32F405RGTx",
+      at: { x: 100, y: 50, angle: 0 },
+      uuid: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      properties: [
+        { name: "Reference", value: "U1" },
+        { name: "Value", value: "STM32F405RGTx" }
+      ]
+    };
+    const files = buildKicadBundle(mkProject(), { symbols: [symbol] });
+    const sch = readSchematic(parse(files["rocket-fc-rev-a.kicad_sch"]));
+    expect(sch.symbols).toHaveLength(1);
+    expect(sch.symbols[0]).toEqual(symbol);
+  });
+
+  it("embeds wires passed via options", () => {
+    const wire: SchematicWire = {
+      pts: [
+        { x: 0, y: 0 },
+        { x: 50, y: 0 }
+      ],
+      uuid: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+    };
+    const files = buildKicadBundle(mkProject(), { wires: [wire] });
+    const sch = readSchematic(parse(files["rocket-fc-rev-a.kicad_sch"]));
+    expect(sch.wires).toHaveLength(1);
+    expect(sch.wires[0]).toEqual(wire);
+  });
+
+  it("preserves order: header keys first, then symbols, then wires", () => {
+    const symbol: SchematicSymbol = {
+      libId: "X:Y",
+      at: { x: 0, y: 0 },
+      uuid: "11111111-1111-1111-1111-111111111111",
+      properties: []
+    };
+    const wire: SchematicWire = {
+      pts: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 }
+      ]
+    };
+    const files = buildKicadBundle(mkProject(), {
+      symbols: [symbol],
+      wires: [wire]
+    });
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    // items[0] is the head atom `kicad_sch`; the rest are child lists.
+    const childHeads = root.items
+      .slice(1)
+      .map((item) =>
+        item.kind === "list" && item.items[0]?.kind === "atom"
+          ? item.items[0].value
+          : null
+      );
+    expect(childHeads).toEqual([
+      "version",
+      "generator",
+      "uuid",
+      "paper",
+      "lib_symbols",
+      "symbol_instances",
+      "symbol",
+      "wire"
+    ]);
   });
 });
