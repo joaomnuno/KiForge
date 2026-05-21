@@ -11,7 +11,7 @@ import {
   type SchematicWire,
   type SList
 } from "../../lib/kicad";
-import { parseRaw } from "../catalog/load-vendored-symbol";
+import { loadVendoredSymbols, parseRaw } from "../catalog/load-vendored-symbol";
 import type { ProjectDocument } from "../../types/domain";
 
 function mkProject(over: Partial<ProjectDocument> = {}): ProjectDocument {
@@ -245,5 +245,31 @@ describe("buildKicadBundle", () => {
       return nameNode.kind === "string" && nameNode.value === "BMP388:BMP388";
     });
     expect(matching).toHaveLength(1);
+  });
+
+  it("embeds the vendored TagConnect catalog symbol body", () => {
+    const libId = "TagConnect:Conn_ARM_SWD_TagConnect_TC2030";
+    const rawBody = loadVendoredSymbols().get(libId);
+    if (!rawBody) {
+      throw new Error(`Missing vendored body for ${libId}`);
+    }
+
+    const symbol: SchematicSymbol = {
+      libId,
+      at: { x: 25.4, y: 25.4, angle: 0 },
+      uuid: "66666666-6666-6666-6666-666666666666",
+      properties: []
+    };
+    const files = buildKicadBundle(mkProject(), {
+      symbols: [symbol],
+      vendoredSymbols: new Map([[libId, parse(rawBody)]])
+    });
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    const libSymbols = findChild(root, "lib_symbols");
+    expect(libSymbols).not.toBeNull();
+    const childSymbols = findChildren(libSymbols!, "symbol");
+    expect(childSymbols).toHaveLength(1);
+    const nameNode = childSymbols[0].items[1];
+    expect(nameNode.kind === "string" ? nameNode.value : null).toBe(libId);
   });
 });
