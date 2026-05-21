@@ -337,6 +337,51 @@ button {
   color: var(--primary);
 }
 
+.library-summary {
+  display: inline-flex;
+  gap: 18px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(53, 53, 52, 0.55);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.library-summary strong {
+  color: var(--text);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.library-controls {
+  display: grid;
+  grid-template-columns: 1fr minmax(240px, 320px);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.library-search {
+  display: block;
+}
+
+.library-search .field__control {
+  padding-left: 14px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .cards-grid,
 .library-grid,
 .connection-grid {

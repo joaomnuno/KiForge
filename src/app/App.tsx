@@ -3,6 +3,7 @@ import { ProjectsPage } from "../features/projects/ProjectsPage";
 import { NewProjectPage } from "../features/projects/NewProjectPage";
 import { ComponentsPage } from "../features/components/ComponentsPage";
 import { ConnectionsPage } from "../features/connections/ConnectionsPage";
+import { LibraryPage } from "../features/library/LibraryPage";
 import { TemplatesPage } from "../features/templates/TemplatesPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 import { ProjectShell } from "../features/workspace/ProjectShell";
@@ -19,6 +20,7 @@ export function App() {
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/new" element={<NewProjectPage />} />
         <Route path="/templates" element={<TemplatesPage />} />
+        <Route path="/library" element={<LibraryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route element={<ProjectShell />}>
           <Route
