@@ -8,8 +8,10 @@ import {
   parseKicadPro,
   readSchematic,
   type SchematicSymbol,
-  type SchematicWire
+  type SchematicWire,
+  type SList
 } from "../../lib/kicad";
+import { parseRaw } from "../catalog/load-vendored-symbol";
 import type { ProjectDocument } from "../../types/domain";
 
 function mkProject(over: Partial<ProjectDocument> = {}): ProjectDocument {
@@ -29,6 +31,14 @@ function mkProject(over: Partial<ProjectDocument> = {}): ProjectDocument {
     updatedAt: new Date(0).toISOString(),
     ...over
   };
+}
+
+function vendoredSymbolBody(raw: string, libId: string): SList {
+  const body = parseRaw(raw).get(libId);
+  if (!body) {
+    throw new Error(`Missing vendored body for ${libId}`);
+  }
+  return parse(body);
 }
 
 describe("buildKicadBundle", () => {
@@ -186,8 +196,10 @@ describe("buildKicadBundle", () => {
       uuid: "33333333-3333-3333-3333-333333333333",
       properties: []
     };
-    const vendoredBody =
-      '(symbol "BMP388" (pin_numbers hide) (pin_names (offset 1.016)) (in_bom yes) (on_board yes))';
+    const vendoredBody = vendoredSymbolBody(
+      '(kicad_symbol_lib (version 20231120) (generator "kiforge-test") (symbol "BMP388:BMP388" (pin_numbers hide) (pin_names (offset 1.016)) (in_bom yes) (on_board yes)))',
+      "BMP388:BMP388"
+    );
     const files = buildKicadBundle(mkProject(), {
       symbols: [symbol],
       vendoredSymbols: new Map([["BMP388:BMP388", vendoredBody]])
@@ -200,7 +212,7 @@ describe("buildKicadBundle", () => {
     const nameNode = childSymbols[0].items[1];
     expect(nameNode.kind).toBe("string");
     if (nameNode.kind === "string") {
-      expect(nameNode.value).toBe("BMP388");
+      expect(nameNode.value).toBe("BMP388:BMP388");
     }
   });
 
@@ -217,7 +229,10 @@ describe("buildKicadBundle", () => {
       uuid: "55555555-5555-5555-5555-555555555555",
       properties: []
     };
-    const vendoredBody = '(symbol "BMP388" (in_bom yes) (on_board yes))';
+    const vendoredBody = vendoredSymbolBody(
+      '(kicad_symbol_lib (version 20231120) (generator "kiforge-test") (symbol "BMP388:BMP388" (in_bom yes) (on_board yes)))',
+      "BMP388:BMP388"
+    );
     const files = buildKicadBundle(mkProject(), {
       symbols: [first, second],
       vendoredSymbols: new Map([["BMP388:BMP388", vendoredBody]])
@@ -227,7 +242,7 @@ describe("buildKicadBundle", () => {
     expect(libSymbols).not.toBeNull();
     const matching = findChildren(libSymbols!, "symbol").filter((child) => {
       const nameNode = child.items[1];
-      return nameNode.kind === "string" && nameNode.value === "BMP388";
+      return nameNode.kind === "string" && nameNode.value === "BMP388:BMP388";
     });
     expect(matching).toHaveLength(1);
   });

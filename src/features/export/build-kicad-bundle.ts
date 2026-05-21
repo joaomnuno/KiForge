@@ -12,16 +12,15 @@
  * into those arrays.
  *
  * Pass `vendoredSymbols` to inline the bodies of any placed symbols
- * whose `lib_id` matches a key in the map. The bodies are parsed into
- * the AST and pushed into the schematic's `(lib_symbols ...)` block
- * in deterministic (sorted by `lib_id`) order, deduped. When the map
- * is absent the `(lib_symbols ...)` block stays empty — the existing
- * pre-vendoring behavior.
+ * whose `lib_id` matches a key in the map. The bodies are pushed into
+ * the schematic's `(lib_symbols ...)` block before placed symbols, and
+ * deduped by symbol name. When the map is absent the `(lib_symbols ...)`
+ * block stays empty - the existing pre-vendoring behavior.
  */
 
 import {
   findChild,
-  parse,
+  head,
   schematicHeader,
   stringify,
   symbolNode,
@@ -42,14 +41,12 @@ export interface KicadBundleOptions {
   /** Wires to add to the schematic. Empty by default. */
   wires?: SchematicWire[];
   /**
-   * Vendored symbol bodies keyed by `lib_id` (e.g.
-   * `"BMP388:BMP388"` → `"(symbol \"BMP388\" ...)"`). Any placed
-   * symbol whose `libId` matches a key has the corresponding body
-   * inlined into the schematic's `(lib_symbols ...)` block so KiCad
-   * can render the part without an external library lookup. When
-   * absent, `(lib_symbols ...)` stays empty.
+   * Parsed vendored symbol bodies keyed by `lib_id`. Any placed symbol
+   * whose `libId` matches a key has the corresponding body inlined into
+   * the schematic's `(lib_symbols ...)` block. When absent,
+   * `(lib_symbols ...)` stays empty.
    */
-  vendoredSymbols?: Map<string, string>;
+  vendoredSymbols?: Map<string, SList>;
 }
 
 export type KicadBundleFiles = Record<string, string>;
@@ -58,7 +55,7 @@ const KICAD_PRO_SCHEMA_VERSION = 1;
 
 function collectVendoredSymbolNodes(
   symbols: readonly SchematicSymbol[],
-  vendoredSymbols: Map<string, string>
+  vendoredSymbols: Map<string, SList>
 ): SList[] {
   const placedLibIds = new Set<string>();
   for (const placed of symbols) {
@@ -66,17 +63,32 @@ function collectVendoredSymbolNodes(
       placedLibIds.add(placed.libId);
     }
   }
-  return Array.from(placedLibIds)
-    .sort()
-    .map((libId) => {
-      const body = vendoredSymbols.get(libId);
-      if (body === undefined) {
-        throw new Error(
-          `Vendored symbol body for "${libId}" disappeared between lookup and parse`
-        );
-      }
-      return parse(body);
-    });
+  const nodesBySymbolName = new Map<string, SList>();
+  for (const libId of Array.from(placedLibIds).sort()) {
+    const body = vendoredSymbols.get(libId);
+    if (body === undefined) {
+      throw new Error(
+        `Vendored symbol body for "${libId}" disappeared between lookup and insert`
+      );
+    }
+
+    if (head(body)?.value !== "symbol") {
+      throw new Error(
+        `Vendored symbol body for "${libId}" must be a (symbol ...) list`
+      );
+    }
+    const nameNode = body.items[1];
+    if (!nameNode || nameNode.kind !== "string") {
+      throw new Error(
+        `Vendored symbol body for "${libId}" is missing a symbol name`
+      );
+    }
+    if (!nodesBySymbolName.has(nameNode.value)) {
+      nodesBySymbolName.set(nameNode.value, body);
+    }
+  }
+
+  return Array.from(nodesBySymbolName.values());
 }
 
 export function buildKicadBundle(

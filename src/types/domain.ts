@@ -138,14 +138,8 @@ export interface ComponentCatalogEntry {
    */
   kicadLibId?: string;
   /**
-   * Repository-relative path to a vendored `.kicad_sym` file containing
-   * the symbol body for this part (e.g.
-   * `"catalog/symbols/snapeda/BMP388.kicad_sym"`). Used by the KiCad
-   * bundle exporter to inline the symbol body into the generated
-   * schematic's `(lib_symbols ...)` block so the schematic opens in
-   * KiCad without an external library lookup. Frontend-only — the Rust
-   * side does not read this field. See
-   * `docs/adr/0002-symbol-vendoring.md` for the sourcing policy.
+   * Path relative to the repository root for a vendored `.kicad_sym`
+   * file, e.g. `catalog/symbols/snapeda/BMP388.kicad_sym`.
    */
   vendoredSymbolPath?: string;
   supportedProtocols: Protocol[];
