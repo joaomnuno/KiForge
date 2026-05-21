@@ -8,6 +8,15 @@ use std::{
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 const MAX_PROJECT_ID_LEN: usize = 96;
+const MAX_KICAD_BUNDLE_FILENAME_BYTES: usize = 255;
+const ALLOWED_KICAD_BUNDLE_EXTENSIONS: [&str; 6] = [
+    ".kicad_sch",
+    ".kicad_pro",
+    ".kicad_sym",
+    ".kicad_pcb",
+    ".kicad_mod",
+    ".kicad_wks",
+];
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -506,6 +515,25 @@ fn validate_kicad_bundle_filenames<'a>(
             ));
         }
 
+        if filename.len() > MAX_KICAD_BUNDLE_FILENAME_BYTES {
+            return Err(format!(
+                "KiCad bundle filename {:?} cannot be longer than {} bytes.",
+                filename, MAX_KICAD_BUNDLE_FILENAME_BYTES
+            ));
+        }
+
+        let lower_filename = filename.to_ascii_lowercase();
+        if !ALLOWED_KICAD_BUNDLE_EXTENSIONS
+            .iter()
+            .any(|extension| lower_filename.ends_with(extension))
+        {
+            return Err(format!(
+                "KiCad bundle filename {:?} must use one of these extensions: {}.",
+                filename,
+                ALLOWED_KICAD_BUNDLE_EXTENSIONS.join(", ")
+            ));
+        }
+
         let normalized_filename = filename.to_lowercase();
         if !normalized_filenames.insert(normalized_filename) {
             return Err(format!(
@@ -949,6 +977,39 @@ mod tests {
         );
 
         assert!(result.is_err());
+        assert!(!temp_dir.path().join("projects").exists());
+    }
+
+    #[test]
+    fn write_kicad_bundle_rejects_disallowed_extension() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+
+        let result = store.write_kicad_bundle(
+            "rocket-fc",
+            HashMap::from([("rocket-fc.txt".to_string(), "contents".to_string())]),
+        );
+
+        let error = result.expect_err("reject disallowed extension");
+        assert!(error.contains("rocket-fc.txt"));
+        assert!(error.contains(".kicad_sch"));
+        assert!(error.contains(".kicad_wks"));
+        assert!(!temp_dir.path().join("projects").exists());
+    }
+
+    #[test]
+    fn write_kicad_bundle_rejects_overlong_filename() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let overlong_filename = format!("{}.kicad_sch", "a".repeat(246));
+
+        let result = store.write_kicad_bundle(
+            "rocket-fc",
+            HashMap::from([(overlong_filename, "contents".to_string())]),
+        );
+
+        let error = result.expect_err("reject overlong filename");
+        assert!(error.contains("255 bytes"));
         assert!(!temp_dir.path().join("projects").exists());
     }
 
