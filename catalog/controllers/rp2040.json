@@ -4,6 +4,7 @@
   "packageName": "QFN-56",
   "voltage": "3.3V logic",
   "notes": "Simple dual-core option for tooling, debug, and utility boards.",
+  "kicadLibId": "MCU_RaspberryPi_RP2040:RP2040",
   "protocols": ["SPI", "I2C", "UART", "USB", "GPIO"],
   "interfaces": [
     {

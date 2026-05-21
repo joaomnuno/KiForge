@@ -97,6 +97,14 @@ export interface ControllerCatalogEntry {
   protocols: Protocol[];
   interfaces: ControllerInterfaceDefinition[];
   gpioPins: string[];
+  /**
+   * KiCad `lib_id` for the part's stock symbol, format `"Library:Symbol"`
+   * (e.g. `"MCU_ST_STM32F4:STM32F405RGTx"`). Used by the KiCad bundle
+   * exporter to place the controller symbol in the generated schematic.
+   * Omit when no stock KiCad symbol exists; the exporter then skips
+   * placement for this part rather than emitting a broken reference.
+   */
+  kicadLibId?: string;
 }
 
 export interface LibraryCategory {
@@ -118,6 +126,17 @@ export interface ComponentCatalogEntry {
    * configurable) I2C address. Used by the I2C-address-conflict validator.
    */
   i2cAddress?: string;
+  /**
+   * KiCad `lib_id` for the part's stock symbol, format `"Library:Symbol"`
+   * (e.g. `"Memory_Flash:W25Q128JVS"`). Used by the KiCad bundle exporter
+   * to place the component symbol in the generated schematic. Omit when
+   * no stock KiCad symbol exists; the exporter skips placement for this
+   * part rather than emitting a broken reference. Inline-embedded
+   * lib_symbols definitions are a post-beta enhancement (see
+   * docs/adr/0001-ui-primitives.md for the project decision style; a
+   * separate ADR will cover catalog symbol vendoring).
+   */
+  kicadLibId?: string;
   supportedProtocols: Protocol[];
   connectionOptions: ComponentConnectionOption[];
 }

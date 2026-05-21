@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { applyDerivedProjectState } from "../connections/planner";
 import { findComponent } from "../catalog/catalog";
 import { buildKicadBundle } from "../export/build-kicad-bundle";
+import { projectToKicadSymbols } from "../export/project-to-kicad-symbols";
 import type {
   ConnectionRecord,
   CreateProjectInput,
@@ -466,7 +467,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({ isExporting: true, errorMessage: null, exportResult: null });
 
     try {
-      const files = buildKicadBundle(document);
+      const workspaceProject = get().currentProject;
+      const symbols = workspaceProject
+        ? projectToKicadSymbols(workspaceProject)
+        : [];
+      const files = buildKicadBundle(document, { symbols });
       const kicadDir = await getProjectService().writeKicadBundle(
         document.id,
         files

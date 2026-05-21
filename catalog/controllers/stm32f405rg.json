@@ -4,6 +4,7 @@
   "packageName": "LQFP-64",
   "voltage": "3.3V logic",
   "notes": "Good fit for medium-complexity sensor and logging boards.",
+  "kicadLibId": "MCU_ST_STM32F4:STM32F405RGTx",
   "protocols": ["SPI", "I2C", "UART", "USB", "SWD", "GPIO"],
   "interfaces": [
     {
