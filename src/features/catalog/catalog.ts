@@ -71,6 +71,7 @@ const componentSchema = z.object({
       'kicadLibId must be in the form "Library:Symbol"'
     )
     .optional(),
+  vendoredSymbolPath: z.string().min(1).optional(),
   supportedProtocols: z.array(protocolSchema).min(1),
   connectionOptions: z.array(componentConnectionOptionSchema)
 });

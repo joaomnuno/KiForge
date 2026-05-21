@@ -163,4 +163,72 @@ describe("buildKicadBundle", () => {
       "wire"
     ]);
   });
+
+  it("leaves lib_symbols empty when no vendoredSymbols map is provided", () => {
+    const symbol: SchematicSymbol = {
+      libId: "BMP388:BMP388",
+      at: { x: 0, y: 0 },
+      uuid: "22222222-2222-2222-2222-222222222222",
+      properties: []
+    };
+    const files = buildKicadBundle(mkProject(), { symbols: [symbol] });
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    const libSymbols = findChild(root, "lib_symbols");
+    expect(libSymbols).not.toBeNull();
+    // Just the head atom `lib_symbols`, no children.
+    expect(libSymbols?.items).toHaveLength(1);
+  });
+
+  it("places a vendored symbol body in lib_symbols when libId matches", () => {
+    const symbol: SchematicSymbol = {
+      libId: "BMP388:BMP388",
+      at: { x: 0, y: 0 },
+      uuid: "33333333-3333-3333-3333-333333333333",
+      properties: []
+    };
+    const vendoredBody =
+      '(symbol "BMP388" (pin_numbers hide) (pin_names (offset 1.016)) (in_bom yes) (on_board yes))';
+    const files = buildKicadBundle(mkProject(), {
+      symbols: [symbol],
+      vendoredSymbols: new Map([["BMP388:BMP388", vendoredBody]])
+    });
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    const libSymbols = findChild(root, "lib_symbols");
+    expect(libSymbols).not.toBeNull();
+    const childSymbols = findChildren(libSymbols!, "symbol");
+    expect(childSymbols).toHaveLength(1);
+    const nameNode = childSymbols[0].items[1];
+    expect(nameNode.kind).toBe("string");
+    if (nameNode.kind === "string") {
+      expect(nameNode.value).toBe("BMP388");
+    }
+  });
+
+  it("dedupes the vendored body when multiple instances share a libId", () => {
+    const first: SchematicSymbol = {
+      libId: "BMP388:BMP388",
+      at: { x: 0, y: 0 },
+      uuid: "44444444-4444-4444-4444-444444444444",
+      properties: []
+    };
+    const second: SchematicSymbol = {
+      libId: "BMP388:BMP388",
+      at: { x: 50, y: 0 },
+      uuid: "55555555-5555-5555-5555-555555555555",
+      properties: []
+    };
+    const vendoredBody = '(symbol "BMP388" (in_bom yes) (on_board yes))';
+    const files = buildKicadBundle(mkProject(), {
+      symbols: [first, second],
+      vendoredSymbols: new Map([["BMP388:BMP388", vendoredBody]])
+    });
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    const libSymbols = findChild(root, "lib_symbols");
+    expect(libSymbols).not.toBeNull();
+    const matching = findChildren(libSymbols!, "symbol").filter((child) => {
+      const nameNode = child.items[1];
+      return nameNode.kind === "string" && nameNode.value === "BMP388";
+    });
+    expect(matching).toHaveLength(1);
+  });
 });
