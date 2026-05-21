@@ -22,7 +22,7 @@ describe("LibraryPage", () => {
     ).toBeInTheDocument();
     // Summary chip text within the page hero.
     expect(
-      screen.getByText((_, el) => el?.textContent === "3 controllers")
+      screen.getByText((_, el) => el?.textContent === "5 controllers")
     ).toBeInTheDocument();
     expect(screen.getAllByText(/components/).length).toBeGreaterThan(0);
   });

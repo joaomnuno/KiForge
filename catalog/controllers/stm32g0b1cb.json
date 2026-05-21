@@ -1,0 +1,112 @@
+{
+  "id": "stm32g0b1cb",
+  "name": "STM32G0B1CB",
+  "packageName": "LQFP-48",
+  "voltage": "1.7V - 3.6V",
+  "notes": "Compact STM32G0 option with USB and mixed serial interfaces.",
+  "protocols": ["SPI", "I2C", "UART", "USB", "SWD", "GPIO"],
+  "interfaces": [
+    {
+      "name": "SPI1",
+      "protocol": "SPI",
+      "signalPins": [
+        { "signal": "SCK", "pins": ["PA5", "PB3"] },
+        { "signal": "MISO", "pins": ["PA6", "PB4"] },
+        { "signal": "MOSI", "pins": ["PA7", "PB5"] }
+      ]
+    },
+    {
+      "name": "SPI2",
+      "protocol": "SPI",
+      "signalPins": [
+        { "signal": "SCK", "pins": ["PB13"] },
+        { "signal": "MISO", "pins": ["PB14"] },
+        { "signal": "MOSI", "pins": ["PB15"] }
+      ]
+    },
+    {
+      "name": "I2C1",
+      "protocol": "I2C",
+      "signalPins": [
+        { "signal": "SCL", "pins": ["PB6", "PB8"] },
+        { "signal": "SDA", "pins": ["PB7", "PB9"] }
+      ]
+    },
+    {
+      "name": "I2C2",
+      "protocol": "I2C",
+      "signalPins": [
+        { "signal": "SCL", "pins": ["PB10", "PB13"] },
+        { "signal": "SDA", "pins": ["PB11", "PB14"] }
+      ]
+    },
+    {
+      "name": "USART1",
+      "protocol": "UART",
+      "signalPins": [
+        { "signal": "TX", "pins": ["PA9"] },
+        { "signal": "RX", "pins": ["PA10"] }
+      ]
+    },
+    {
+      "name": "USART2",
+      "protocol": "UART",
+      "signalPins": [
+        { "signal": "TX", "pins": ["PA2"] },
+        { "signal": "RX", "pins": ["PA3"] }
+      ]
+    },
+    {
+      "name": "USB_FS",
+      "protocol": "USB",
+      "signalPins": [
+        { "signal": "D+", "pins": ["PA12"] },
+        { "signal": "D-", "pins": ["PA11"] }
+      ]
+    },
+    {
+      "name": "SWD",
+      "protocol": "SWD",
+      "signalPins": [
+        { "signal": "SWDIO", "pins": ["PA13"] },
+        { "signal": "SWCLK", "pins": ["PA14"] }
+      ]
+    }
+  ],
+  "gpioPins": [
+    "PA0",
+    "PA1",
+    "PA2",
+    "PA3",
+    "PA4",
+    "PA5",
+    "PA6",
+    "PA7",
+    "PA8",
+    "PA9",
+    "PA10",
+    "PA15",
+    "PB0",
+    "PB1",
+    "PB2",
+    "PB3",
+    "PB4",
+    "PB5",
+    "PB6",
+    "PB7",
+    "PB8",
+    "PB9",
+    "PB10",
+    "PB11",
+    "PB12",
+    "PB13",
+    "PB14",
+    "PB15",
+    "PC6",
+    "PC7",
+    "PD0",
+    "PD1",
+    "PD2",
+    "PD3"
+  ]
+}
