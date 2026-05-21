@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { applyDerivedProjectState } from "../connections/planner";
 import { findComponent } from "../catalog/catalog";
+import { buildKicadBundle } from "../export/build-kicad-bundle";
 import type {
   ConnectionRecord,
   CreateProjectInput,
@@ -45,6 +46,7 @@ interface WorkspaceState extends WorkspaceSnapshot {
   ) => Promise<WorkspaceProject | null>;
   deleteProject: (projectId: string) => Promise<void>;
   exportProject: (projectId: string) => Promise<ProjectExportResult | null>;
+  exportKicadBundleForCurrentProject: () => Promise<ProjectExportResult | null>;
   addComponentToCurrentProject: (catalogId: string) => Promise<void>;
   removeComponentFromCurrentProject: (
     projectComponentId: string
@@ -83,6 +85,22 @@ function makeProjectExportFileName(projectId: string) {
 
 function isDownloadTarget(target: string) {
   return target.startsWith("data:") || target.startsWith("blob:");
+}
+
+function buildKicadBundleExportResult(
+  projectId: string,
+  projectName: string,
+  kicadDir: string
+): ProjectExportResult {
+  return {
+    projectId,
+    projectName,
+    fileName: `${projectId}.kicad_pro`,
+    target: kicadDir,
+    kind: "file-path",
+    message: `Wrote KiCad starter bundle for "${projectName}" to ${kicadDir}.`,
+    exportedAt: new Date().toISOString()
+  };
 }
 
 function buildProjectExportResult(
@@ -369,6 +387,48 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         projectId,
         target,
         get().projects
+      );
+
+      set({
+        isExporting: false,
+        exportResult,
+        errorMessage: null
+      });
+
+      return exportResult;
+    } catch (error) {
+      set({
+        isExporting: false,
+        exportResult: null,
+        errorMessage: toErrorMessage(error)
+      });
+      return null;
+    }
+  },
+
+  async exportKicadBundleForCurrentProject() {
+    if (get().isExporting) {
+      return null;
+    }
+
+    const document = get().currentProjectDocument;
+    if (!document) {
+      set({ errorMessage: "Open a project before exporting." });
+      return null;
+    }
+
+    set({ isExporting: true, errorMessage: null, exportResult: null });
+
+    try {
+      const files = buildKicadBundle(document);
+      const kicadDir = await getProjectService().writeKicadBundle(
+        document.id,
+        files
+      );
+      const exportResult = buildKicadBundleExportResult(
+        document.id,
+        document.name,
+        kicadDir
       );
 
       set({
