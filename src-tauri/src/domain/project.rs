@@ -86,6 +86,9 @@ pub struct ProjectDocument {
     pub issues: Vec<ValidationIssue>,
     pub created_at: String,
     pub updated_at: String,
+    /// RFC3339 timestamp for the latest successful KiCad bundle write.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_exported_at: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -196,6 +199,7 @@ impl ProjectStore {
             issues: Vec::new(),
             created_at: timestamp.clone(),
             updated_at: timestamp,
+            last_exported_at: None,
         };
 
         self.write_project_file(&project)
@@ -339,6 +343,7 @@ impl ProjectStore {
     ) -> Result<String, String> {
         validate_project_id(project_id)?;
         validate_kicad_bundle_filenames(files.keys().map(String::as_str))?;
+        let mut project = self.load_project(project_id)?;
 
         let kicad_dir = self.project_dir(project_id).join("kicad");
         fs::create_dir_all(&kicad_dir).map_err(|error| {
@@ -365,6 +370,9 @@ impl ProjectStore {
                 &error,
             )
         })?;
+
+        project.last_exported_at = Some(current_timestamp()?);
+        self.save_project(project)?;
 
         Ok(absolute_kicad_dir.display().to_string())
     }
@@ -709,8 +717,9 @@ mod tests {
         validate_project_id, ConnectionRecord, CreateProjectInput, ProjectComponentRecord,
         ProjectDocument, ProjectStore, SignalAssignment, ValidationIssue,
     };
-    use std::{collections::HashMap, fs, path::Path};
+    use std::{collections::HashMap, fs, path::Path, thread, time::Duration};
     use tempfile::tempdir;
+    use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
     fn sample_input() -> CreateProjectInput {
         CreateProjectInput {
@@ -873,6 +882,9 @@ mod tests {
     fn write_kicad_bundle_writes_files_to_project_kicad_directory() {
         let temp_dir = tempdir().expect("tempdir");
         let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let project = store
+            .create_project(sample_input())
+            .expect("create project");
         let files = HashMap::from([
             (
                 "rocket-fc.kicad_sch".to_string(),
@@ -885,12 +897,12 @@ mod tests {
         ]);
 
         let kicad_path = store
-            .write_kicad_bundle("rocket-fc", files)
+            .write_kicad_bundle(&project.id, files)
             .expect("write KiCad bundle");
         let kicad_dir = temp_dir
             .path()
             .join("projects")
-            .join("rocket-fc")
+            .join(&project.id)
             .join("kicad");
 
         assert_eq!(
@@ -913,17 +925,20 @@ mod tests {
     fn write_kicad_bundle_overwrites_existing_file() {
         let temp_dir = tempdir().expect("tempdir");
         let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let project = store
+            .create_project(sample_input())
+            .expect("create project");
 
         store
             .write_kicad_bundle(
-                "rocket-fc",
+                &project.id,
                 HashMap::from([("rocket-fc.kicad_sch".to_string(), "old".to_string())]),
             )
             .expect("write initial KiCad bundle");
 
         store
             .write_kicad_bundle(
-                "rocket-fc",
+                &project.id,
                 HashMap::from([("rocket-fc.kicad_sch".to_string(), "new".to_string())]),
             )
             .expect("rewrite KiCad bundle");
@@ -931,10 +946,85 @@ mod tests {
         let schematic_path = temp_dir
             .path()
             .join("projects")
-            .join("rocket-fc")
+            .join(project.id)
             .join("kicad")
             .join("rocket-fc.kicad_sch");
         assert_eq!(fs::read(schematic_path).expect("read schematic"), b"new");
+    }
+
+    #[test]
+    fn write_kicad_bundle_sets_last_exported_at_on_project() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let project = store
+            .create_project(sample_input())
+            .expect("create project");
+
+        store
+            .write_kicad_bundle(
+                &project.id,
+                HashMap::from([("rocket-fc.kicad_sch".to_string(), "first".to_string())]),
+            )
+            .expect("write initial KiCad bundle");
+
+        let first_exported_at = store
+            .load_project(&project.id)
+            .expect("load project after first export")
+            .last_exported_at
+            .expect("first export timestamp");
+        let first_timestamp = OffsetDateTime::parse(&first_exported_at, &Rfc3339)
+            .expect("parse first export timestamp");
+
+        thread::sleep(Duration::from_secs(1));
+
+        store
+            .write_kicad_bundle(
+                &project.id,
+                HashMap::from([("rocket-fc.kicad_sch".to_string(), "second".to_string())]),
+            )
+            .expect("rewrite KiCad bundle");
+
+        let second_exported_at = store
+            .load_project(&project.id)
+            .expect("load project after second export")
+            .last_exported_at
+            .expect("second export timestamp");
+        let second_timestamp = OffsetDateTime::parse(&second_exported_at, &Rfc3339)
+            .expect("parse second export timestamp");
+
+        assert!(second_timestamp > first_timestamp);
+    }
+
+    #[test]
+    fn load_project_accepts_legacy_project_without_last_exported_at() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let project_dir = temp_dir.path().join("projects").join("legacy-project");
+        fs::create_dir_all(&project_dir).expect("create legacy project dir");
+        fs::write(
+            project_dir.join("project.json"),
+            r#"{
+  "id": "legacy-project",
+  "name": "Legacy Project",
+  "description": "Saved before export timestamps existed.",
+  "controllerId": "stm32h743zi",
+  "status": "Draft",
+  "voltageDomain": "3.3V",
+  "template": "Blank project",
+  "outputTarget": "Generate KiCad starter project",
+  "components": [],
+  "connections": [],
+  "issues": [],
+  "createdAt": "2026-05-19T00:00:00Z",
+  "updatedAt": "2026-05-19T00:00:00Z"
+}"#,
+        )
+        .expect("write legacy project file");
+
+        let loaded = store.load_project("legacy-project").expect("load project");
+
+        assert_eq!(loaded.id, "legacy-project");
+        assert_eq!(loaded.last_exported_at, None);
     }
 
     #[test]

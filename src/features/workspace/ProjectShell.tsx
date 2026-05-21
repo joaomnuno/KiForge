@@ -39,7 +39,7 @@ export function ProjectShell() {
   const progress = getProjectProgress(currentProject, exportResult);
   const derivedStatus = deriveProjectStatus(
     progress,
-    exportResult != null && exportResult.projectId === currentProject.id
+    Boolean(currentProject.lastExportedAt)
   );
   // Gate the export button on every step EXCEPT export being complete.
   // (Gating on derivedStatus === "Ready to Generate" would be circular —

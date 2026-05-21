@@ -7,20 +7,15 @@ import type {
   CreateProjectInput,
   ProjectDocument,
   ProjectExportResult,
-  ProjectSummary,
   WorkspaceProject
 } from "../../types/domain";
-import {
-  resolveProjectDocument,
-  sortProjects,
-  toProjectSummary
-} from "./project-mappers";
+import { resolveProjectDocument, sortProjects } from "./project-mappers";
 import { getProjectService } from "./project-service";
 
 const ACTIVE_PROJECT_STORAGE_KEY = "kiforge.active-project-id.v1";
 
 interface WorkspaceSnapshot {
-  projects: ProjectSummary[];
+  projects: WorkspaceProject[];
   activeProjectId: string | null;
   currentProjectDocument: ProjectDocument | null;
   currentProject: WorkspaceProject | null;
@@ -106,7 +101,7 @@ function buildKicadBundleExportResult(
 function buildProjectExportResult(
   projectId: string,
   target: string,
-  projects: ProjectSummary[]
+  projects: WorkspaceProject[]
 ): ProjectExportResult {
   const projectName =
     projects.find((project) => project.id === projectId)?.name ?? projectId;
@@ -161,26 +156,29 @@ function buildWorkspaceSnapshot(
   const sortedProjects = sortProjects(
     projectDocuments.map(applyDerivedProjectState)
   );
+  const workspaceProjects = sortedProjects.map(resolveProjectDocument);
   const requestedProjectId = preferredProjectId ?? readActiveProjectId();
   const resolvedActiveProjectId =
     requestedProjectId &&
-    sortedProjects.some((project) => project.id === requestedProjectId)
+    workspaceProjects.some((project) => project.id === requestedProjectId)
       ? requestedProjectId
-      : (sortedProjects[0]?.id ?? null);
+      : (workspaceProjects[0]?.id ?? null);
 
   const currentProjectDocument =
     sortedProjects.find((project) => project.id === resolvedActiveProjectId) ??
     null;
+  const currentProject =
+    workspaceProjects.find(
+      (project) => project.id === resolvedActiveProjectId
+    ) ?? null;
 
   writeActiveProjectId(resolvedActiveProjectId);
 
   return {
-    projects: sortedProjects.map(toProjectSummary),
+    projects: workspaceProjects,
     activeProjectId: resolvedActiveProjectId,
     currentProjectDocument,
-    currentProject: currentProjectDocument
-      ? resolveProjectDocument(currentProjectDocument)
-      : null
+    currentProject
   };
 }
 
@@ -430,6 +428,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         document.name,
         kicadDir
       );
+
+      await refreshWorkspace(set, document.id);
 
       set({
         isExporting: false,

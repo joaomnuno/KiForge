@@ -66,5 +66,6 @@ export const projectDocumentSchema = z.object({
     })
   ),
   createdAt: z.string().min(1),
-  updatedAt: z.string().min(1)
+  updatedAt: z.string().min(1),
+  lastExportedAt: z.string().min(1).optional()
 });

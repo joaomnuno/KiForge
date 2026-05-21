@@ -181,6 +181,8 @@ export interface ProjectDocument {
   issues: ValidationIssue[];
   createdAt: string;
   updatedAt: string;
+  /** RFC3339 timestamp for the latest successful KiCad bundle write. */
+  lastExportedAt?: string;
 }
 
 export interface WorkspaceProjectComponent extends ProjectComponentRecord {
