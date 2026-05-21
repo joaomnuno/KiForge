@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AppScaffold } from "../../components/layout/AppScaffold";
 import { Button } from "../../components/ui/Button";
+import { ConfirmDialog } from "../../components/ui/Dialog";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatTimestamp } from "../../lib/date-format";
@@ -28,6 +29,10 @@ export function ProjectsPage() {
   const isBusy = isSaving || isExporting;
   const [activeFilter, setActiveFilter] =
     useState<ProjectFilter>("All Projects");
+  const [pendingDelete, setPendingDelete] = useState<{
+    projectId: string;
+    projectName: string;
+  } | null>(null);
 
   const filteredProjects = useMemo(() => {
     switch (activeFilter) {
@@ -72,13 +77,15 @@ export function ProjectsPage() {
     await duplicateProject(projectId, nextName ?? undefined);
   }
 
-  async function handleDeleteProject(projectId: string, projectName: string) {
-    const confirmed = window.confirm(`Delete "${projectName}"?`);
-    if (!confirmed) {
+  function handleDeleteProject(projectId: string, projectName: string) {
+    setPendingDelete({ projectId, projectName });
+  }
+
+  async function confirmPendingDelete() {
+    if (!pendingDelete) {
       return;
     }
-
-    await deleteProject(projectId);
+    await deleteProject(pendingDelete.projectId);
   }
 
   async function handleExportProject(projectId: string) {
@@ -299,7 +306,7 @@ export function ProjectsPage() {
                   <Button
                     disabled={isBusy}
                     onClick={() =>
-                      void handleDeleteProject(project.id, project.name)
+                      handleDeleteProject(project.id, project.name)
                     }
                     type="button"
                     variant="ghost"
@@ -312,6 +319,24 @@ export function ProjectsPage() {
           </section>
         ) : null}
       </div>
+      <ConfirmDialog
+        open={pendingDelete != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDelete(null);
+          }
+        }}
+        title={
+          pendingDelete
+            ? `Delete "${pendingDelete.projectName}"?`
+            : "Delete project"
+        }
+        description="This permanently removes the project document and any saved KiCad bundle. The action cannot be undone."
+        confirmLabel="Delete project"
+        destructive
+        busy={isBusy}
+        onConfirm={confirmPendingDelete}
+      />
     </AppScaffold>
   );
 }
