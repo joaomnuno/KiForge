@@ -195,11 +195,15 @@ describe("connection planner", () => {
       connections: [flashConnection, imuConnection]
     });
 
+    // Three info-severity issues come from optional-signal coverage:
+    // W25Q128JV declares HOLD + WP as SPI optionals (neither enabled);
+    // ICM-42688-P declares INT (not enabled). Info issues don't bump
+    // warningCount/errorConflicts.
     expect(getProjectValidationSummary(derivedProject)).toEqual({
       totalDevices: 2,
       connectedDevices: 2,
       savedConnections: 2,
-      unresolvedIssues: 0,
+      unresolvedIssues: 3,
       errorConflicts: 0,
       warningCount: 0,
       optionalSignalCount: 0,
@@ -230,11 +234,14 @@ describe("connection planner", () => {
       connections: [flashConnection]
     });
 
+    // HOLD is enabled (so optional-signal coverage does NOT warn for it),
+    // but WP is not enabled -> +1 info issue from the optional-signal
+    // validator on top of the 3 existing ones.
     expect(getProjectValidationSummary(derivedProject)).toEqual({
       totalDevices: 2,
       connectedDevices: 0,
       savedConnections: 1,
-      unresolvedIssues: 3,
+      unresolvedIssues: 4,
       errorConflicts: 0,
       warningCount: 1,
       optionalSignalCount: 1,
@@ -287,11 +294,14 @@ describe("connection planner", () => {
       connections: [flashConnection, conflictingImuConnection]
     });
 
+    // Existing 2 pin-conflict errors plus 3 info issues from optional-
+    // signal coverage (W25Q128JV HOLD + WP, ICM-42688-P INT). Info
+    // issues count in unresolvedIssues but not errorConflicts.
     expect(getProjectValidationSummary(derivedProject)).toEqual({
       totalDevices: 2,
       connectedDevices: 0,
       savedConnections: 2,
-      unresolvedIssues: 2,
+      unresolvedIssues: 5,
       errorConflicts: 2,
       warningCount: 0,
       optionalSignalCount: 0,
