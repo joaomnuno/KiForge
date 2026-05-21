@@ -38,7 +38,7 @@ function vendoredSymbolBody(raw: string, libId: string): SList {
   if (!body) {
     throw new Error(`Missing vendored body for ${libId}`);
   }
-  return parse(body);
+  return body;
 }
 
 describe("buildKicadBundle", () => {

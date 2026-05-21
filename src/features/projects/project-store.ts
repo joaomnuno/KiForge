@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { applyDerivedProjectState } from "../connections/planner";
 import { findComponent } from "../catalog/catalog";
+import { loadVendoredSymbols } from "../catalog/load-vendored-symbol";
 import { buildKicadBundle } from "../export/build-kicad-bundle";
 import { projectToKicadSymbols } from "../export/project-to-kicad-symbols";
 import type {
@@ -471,7 +472,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const symbols = workspaceProject
         ? projectToKicadSymbols(workspaceProject)
         : [];
-      const files = buildKicadBundle(document, { symbols });
+      const files = buildKicadBundle(document, {
+        symbols,
+        vendoredSymbols: loadVendoredSymbols()
+      });
       const kicadDir = await getProjectService().writeKicadBundle(
         document.id,
         files

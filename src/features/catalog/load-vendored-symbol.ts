@@ -1,10 +1,4 @@
-import {
-  findChildren,
-  head,
-  parse,
-  stringify,
-  type SList
-} from "../../lib/kicad";
+import { findChildren, head, parse, type SList } from "../../lib/kicad";
 
 /**
  * Bundled `.kicad_sym` sources discovered under `catalog/symbols/`.
@@ -35,12 +29,8 @@ function symbolName(symbolList: SList): string {
   return nameNode.value;
 }
 
-/**
- * Parse one raw `.kicad_sym` body and return `libId` -> serialized
- * top-level `(symbol "Library:Symbol" ...)` entries.
- */
-export function parseRaw(raw: string): Map<string, string> {
-  const out = new Map<string, string>();
+export function parseRaw(raw: string): Map<string, SList> {
+  const out = new Map<string, SList>();
   const root = parse(raw);
 
   const rootHead = head(root)?.value;
@@ -58,18 +48,14 @@ export function parseRaw(raw: string): Map<string, string> {
   }
 
   for (const symbolList of symbolLists) {
-    out.set(symbolName(symbolList), stringify(symbolList).trimEnd());
+    out.set(symbolName(symbolList), symbolList);
   }
 
   return out;
 }
 
-/**
- * Build a fresh `libId` -> symbol body map from every bundled vendored
- * `.kicad_sym` file.
- */
-export function loadVendoredSymbols(): Map<string, string> {
-  const out = new Map<string, string>();
+export function loadVendoredSymbols(): Map<string, SList> {
+  const out = new Map<string, SList>();
   for (const raw of Object.values(vendoredSymbolModules)) {
     for (const [libId, body] of parseRaw(raw)) {
       out.set(libId, body);
