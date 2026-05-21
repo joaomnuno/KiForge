@@ -1,15 +1,28 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { catalog } from "../catalog/catalog";
 import { useWorkspaceStore } from "../projects/project-store";
 import {
   deriveProjectStatus,
   getProjectProgress
 } from "../projects/project-progress";
+import { voltageDomains, type VoltageDomain } from "../../types/domain";
 
 export function ProjectOverviewPage() {
   const currentProject = useWorkspaceStore((state) => state.currentProject);
   const exportResult = useWorkspaceStore((state) => state.exportResult);
+  const isSaving = useWorkspaceStore((state) => state.isSaving);
+  const updateCurrentProjectIdentity = useWorkspaceStore(
+    (state) => state.updateCurrentProjectIdentity
+  );
+
+  const [isEditingIdentity, setIsEditingIdentity] = useState(false);
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [controllerIdDraft, setControllerIdDraft] = useState("");
+  const [voltageDraft, setVoltageDraft] = useState<VoltageDomain>("3.3V");
 
   if (!currentProject) {
     return null;
@@ -32,6 +45,25 @@ export function ProjectOverviewPage() {
   ).length;
   const totalIssues = currentProject.issues.length;
 
+  function openEdit() {
+    if (!currentProject) {
+      return;
+    }
+    setDescriptionDraft(currentProject.description);
+    setControllerIdDraft(currentProject.controller.id);
+    setVoltageDraft(currentProject.voltageDomain);
+    setIsEditingIdentity(true);
+  }
+
+  async function handleSaveIdentity() {
+    await updateCurrentProjectIdentity({
+      description: descriptionDraft,
+      controllerId: controllerIdDraft,
+      voltageDomain: voltageDraft
+    });
+    setIsEditingIdentity(false);
+  }
+
   return (
     <div className="page-stack">
       <Panel
@@ -42,14 +74,85 @@ export function ProjectOverviewPage() {
         }
         headerActions={<StatusBadge label={projectStatus} />}
       >
-        {nextStep ? (
-          <div className="button-group">
-            <Link className="button button--primary" to={nextStep.href}>
-              Resume {nextStep.label}
-            </Link>
-          </div>
+        {isEditingIdentity ? (
+          <form
+            className="stack-sm"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleSaveIdentity();
+            }}
+            aria-label="Edit project identity"
+          >
+            <label className="field">
+              <span>Description</span>
+              <textarea
+                className="field__control"
+                rows={3}
+                value={descriptionDraft}
+                onChange={(event) => setDescriptionDraft(event.target.value)}
+                required
+              />
+            </label>
+
+            <label className="field">
+              <span>Controller</span>
+              <select
+                className="field__control"
+                value={controllerIdDraft}
+                onChange={(event) => setControllerIdDraft(event.target.value)}
+              >
+                {catalog.controllers.map((controller) => (
+                  <option key={controller.id} value={controller.id}>
+                    {controller.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Voltage domain</span>
+              <select
+                className="field__control"
+                value={voltageDraft}
+                onChange={(event) =>
+                  setVoltageDraft(event.target.value as VoltageDomain)
+                }
+              >
+                {voltageDomains.map((domain) => (
+                  <option key={domain} value={domain}>
+                    {domain}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="button-group">
+              <Button variant="primary" type="submit" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save identity"}
+              </Button>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setIsEditingIdentity(false)}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
         ) : (
-          <p className="planner-note">All steps complete.</p>
+          <div className="button-group">
+            {nextStep ? (
+              <Link className="button button--primary" to={nextStep.href}>
+                Resume {nextStep.label}
+              </Link>
+            ) : (
+              <p className="planner-note">All steps complete.</p>
+            )}
+            <Button variant="secondary" type="button" onClick={openEdit}>
+              Edit identity
+            </Button>
+          </div>
         )}
       </Panel>
 
