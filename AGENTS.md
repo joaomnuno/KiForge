@@ -101,6 +101,7 @@ cargo fmt --manifest-path src-tauri/Cargo.toml
 - Progress / status derivation belongs in `src/features/projects/project-progress.ts` (single source of truth for step states). Don't recompute status ad hoc inside components.
 - Persisted project shape is the contract between the frontend store and the Rust backend. Coordinate any change to that shape across `src/types/domain.ts`, `src/features/projects/project-service.ts`, `src/features/projects/project-store.ts`, and `src-tauri/src/domain/project.rs` in the same PR.
 - Don't introduce a new state manager, UI framework, or styling system without explicit approval.
+- For any non-trivial UI change, read `.claude/rules/frontend-ui.md` — it adapts Anthropic's "Prompting for frontend aesthetics" guidance to this repo (typography, layout, density, real desktop tool affordances, anti-AI-slop checklist).
 
 ## Tauri / Rust Rules
 
