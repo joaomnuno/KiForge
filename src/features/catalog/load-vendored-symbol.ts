@@ -1,9 +1,4 @@
-import {
-  findChildren,
-  head,
-  parse,
-  type SList
-} from "../../lib/kicad";
+import { findChildren, head, parse, type SList } from "../../lib/kicad";
 
 /**
  * Bundled `.kicad_sym` sources discovered under `catalog/symbols/`.
