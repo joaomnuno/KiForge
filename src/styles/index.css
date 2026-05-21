@@ -587,6 +587,76 @@ button {
   gap: 10px;
 }
 
+.dropdown-menu__content {
+  min-width: 240px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  box-shadow: var(--shadow-soft);
+  z-index: 52;
+}
+
+.dropdown-menu__content:focus {
+  outline: none;
+}
+
+.dropdown-menu__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.2;
+  user-select: none;
+  outline: none;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.dropdown-menu__item:hover,
+.dropdown-menu__item:focus,
+.dropdown-menu__item[data-highlighted] {
+  background: rgba(102, 217, 204, 0.1);
+  color: var(--primary);
+}
+
+.dropdown-menu__item--destructive {
+  color: var(--error);
+}
+
+.dropdown-menu__item--destructive:hover,
+.dropdown-menu__item--destructive:focus,
+.dropdown-menu__item--destructive[data-highlighted] {
+  background: rgba(255, 180, 171, 0.12);
+  color: var(--error);
+}
+
+.dropdown-menu__item[data-disabled],
+.dropdown-menu__item[data-state="disabled"] {
+  cursor: not-allowed;
+  color: var(--text-subtle);
+  background: transparent;
+}
+
+.dropdown-menu__separator {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--outline);
+}
+
+.dropdown-menu__label {
+  padding: 8px 10px;
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+  line-height: 1.3;
+  user-select: none;
+}
+
 .panel {
   border-radius: var(--radius-lg);
   background: rgba(28, 27, 27, 0.92);
@@ -859,10 +929,6 @@ button {
   font-family: var(--font-mono);
 }
 
-.account-menu {
-  position: relative;
-}
-
 .avatar--button {
   border: 1px solid transparent;
   cursor: pointer;
@@ -877,22 +943,6 @@ button {
 
 .avatar--button:active {
   transform: translateY(1px);
-}
-
-.account-menu__panel {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  z-index: 40;
-  min-width: 240px;
-  padding: 6px;
-  border-radius: var(--radius-md);
-  background: rgba(28, 27, 27, 0.98);
-  border: 1px solid var(--outline-ghost);
-  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.45);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .account-menu__header {
@@ -911,38 +961,6 @@ button {
 .account-menu__header span {
   color: var(--text-subtle);
   font-size: 0.78rem;
-}
-
-.account-menu__group {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.account-menu__group--last {
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px solid var(--outline-ghost);
-}
-
-.account-menu__item {
-  text-align: left;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: transparent;
-  border: 0;
-  color: var(--text);
-  cursor: pointer;
-  font: inherit;
-  transition:
-    background 120ms ease,
-    color 120ms ease;
-}
-
-.account-menu__item:hover,
-.account-menu__item:focus-visible {
-  background: rgba(102, 217, 204, 0.1);
-  color: var(--primary);
 }
 
 .account-menu__item--muted {
