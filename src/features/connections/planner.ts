@@ -3,6 +3,7 @@ import {
   findControllerInterface
 } from "../catalog/catalog";
 import { resolveProjectDocument } from "../projects/project-mappers";
+import { validateVoltageCompatibility } from "./voltage-validation";
 import type {
   BusMode,
   ComponentConnectionSignalDefinition,
@@ -953,6 +954,8 @@ export function applyDerivedProjectState(project: ProjectDocument) {
           : ("Partially defined" as const)
     };
   });
+
+  issues.push(...validateVoltageCompatibility(workspace));
 
   const nextProject: ProjectDocument = {
     ...project,
