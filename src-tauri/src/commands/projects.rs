@@ -1,4 +1,5 @@
 use crate::domain::project::{CreateProjectInput, ProjectDocument, ProjectStore};
+use std::collections::HashMap;
 use tauri::{AppHandle, Manager};
 
 fn project_store(app: &AppHandle) -> Result<ProjectStore, String> {
@@ -64,4 +65,13 @@ pub fn delete_project(app: AppHandle, project_id: String) -> Result<(), String> 
 #[tauri::command]
 pub fn export_project(app: AppHandle, project_id: String) -> Result<String, String> {
     project_store(&app)?.export_project(&project_id)
+}
+
+#[tauri::command]
+pub fn write_kicad_bundle(
+    app: AppHandle,
+    project_id: String,
+    files: HashMap<String, String>,
+) -> Result<String, String> {
+    project_store(&app)?.write_kicad_bundle(&project_id, files)
 }

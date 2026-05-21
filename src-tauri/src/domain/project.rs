@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::{HashMap, HashSet},
     fs::{self, File, OpenOptions},
     io::{ErrorKind, Write},
     path::{Path, PathBuf},
@@ -322,6 +323,43 @@ impl ProjectStore {
         Ok(export_dir.display().to_string())
     }
 
+    pub fn write_kicad_bundle(
+        &self,
+        project_id: &str,
+        files: HashMap<String, String>,
+    ) -> Result<String, String> {
+        validate_project_id(project_id)?;
+        validate_kicad_bundle_filenames(files.keys().map(String::as_str))?;
+
+        let kicad_dir = self.project_dir(project_id).join("kicad");
+        fs::create_dir_all(&kicad_dir).map_err(|error| {
+            format_path_error(
+                "Failed to create KiCad bundle directory",
+                &kicad_dir,
+                &error,
+            )
+        })?;
+
+        for (filename, contents) in files {
+            let file_path = kicad_dir.join(filename);
+            write_file_atomically(
+                &file_path,
+                contents.as_bytes(),
+                "Failed to write KiCad bundle file",
+            )?;
+        }
+
+        let absolute_kicad_dir = fs::canonicalize(&kicad_dir).map_err(|error| {
+            format_path_error(
+                "Failed to resolve KiCad bundle directory",
+                &kicad_dir,
+                &error,
+            )
+        })?;
+
+        Ok(absolute_kicad_dir.display().to_string())
+    }
+
     fn projects_dir(&self) -> PathBuf {
         self.root_dir.join("projects")
     }
@@ -435,6 +473,46 @@ fn validate_project_id(project_id: &str) -> Result<(), String> {
 
     if is_reserved_project_id(project_id) {
         return Err("Project id uses a reserved system name.".into());
+    }
+
+    Ok(())
+}
+
+fn validate_kicad_bundle_filenames<'a>(
+    filenames: impl IntoIterator<Item = &'a str>,
+) -> Result<(), String> {
+    let mut normalized_filenames = HashSet::new();
+
+    for filename in filenames {
+        if filename.is_empty() {
+            return Err("KiCad bundle filename \"\" cannot be empty.".into());
+        }
+
+        if filename.starts_with('.') {
+            return Err(format!(
+                "KiCad bundle filename {:?} cannot start with a dot.",
+                filename
+            ));
+        }
+
+        if filename.contains('/')
+            || filename.contains('\\')
+            || filename.contains("..")
+            || filename.contains('\0')
+        {
+            return Err(format!(
+                "KiCad bundle filename {:?} cannot contain path separators, traversal segments, or NUL bytes.",
+                filename
+            ));
+        }
+
+        let normalized_filename = filename.to_lowercase();
+        if !normalized_filenames.insert(normalized_filename) {
+            return Err(format!(
+                "KiCad bundle filename {:?} conflicts with another filename after case-insensitive comparison.",
+                filename
+            ));
+        }
     }
 
     Ok(())
@@ -603,7 +681,7 @@ mod tests {
         validate_project_id, ConnectionRecord, CreateProjectInput, ProjectComponentRecord,
         ProjectDocument, ProjectStore, SignalAssignment, ValidationIssue,
     };
-    use std::{fs, path::Path};
+    use std::{collections::HashMap, fs, path::Path};
     use tempfile::tempdir;
 
     fn sample_input() -> CreateProjectInput {
@@ -761,5 +839,148 @@ mod tests {
         assert_eq!(manifest["issues"][0]["id"], "issue-1");
         assert_eq!(manifest["files"][0], "project.json");
         assert_eq!(manifest["files"][1], "manifest.json");
+    }
+
+    #[test]
+    fn write_kicad_bundle_writes_files_to_project_kicad_directory() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let files = HashMap::from([
+            (
+                "rocket-fc.kicad_sch".to_string(),
+                "(kicad_sch (version 20250114))\n".to_string(),
+            ),
+            (
+                "rocket-fc.kicad_pro".to_string(),
+                "{\"meta\":{\"version\":1}}\n".to_string(),
+            ),
+        ]);
+
+        let kicad_path = store
+            .write_kicad_bundle("rocket-fc", files)
+            .expect("write KiCad bundle");
+        let kicad_dir = temp_dir
+            .path()
+            .join("projects")
+            .join("rocket-fc")
+            .join("kicad");
+
+        assert_eq!(
+            Path::new(&kicad_path),
+            fs::canonicalize(&kicad_dir)
+                .expect("canonicalize KiCad directory")
+                .as_path()
+        );
+        assert_eq!(
+            fs::read(kicad_dir.join("rocket-fc.kicad_sch")).expect("read schematic"),
+            b"(kicad_sch (version 20250114))\n"
+        );
+        assert_eq!(
+            fs::read(kicad_dir.join("rocket-fc.kicad_pro")).expect("read project"),
+            b"{\"meta\":{\"version\":1}}\n"
+        );
+    }
+
+    #[test]
+    fn write_kicad_bundle_overwrites_existing_file() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+
+        store
+            .write_kicad_bundle(
+                "rocket-fc",
+                HashMap::from([("rocket-fc.kicad_sch".to_string(), "old".to_string())]),
+            )
+            .expect("write initial KiCad bundle");
+
+        store
+            .write_kicad_bundle(
+                "rocket-fc",
+                HashMap::from([("rocket-fc.kicad_sch".to_string(), "new".to_string())]),
+            )
+            .expect("rewrite KiCad bundle");
+
+        let schematic_path = temp_dir
+            .path()
+            .join("projects")
+            .join("rocket-fc")
+            .join("kicad")
+            .join("rocket-fc.kicad_sch");
+        assert_eq!(fs::read(schematic_path).expect("read schematic"), b"new");
+    }
+
+    #[test]
+    fn write_kicad_bundle_rejects_path_traversal_filename() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+
+        let result = store.write_kicad_bundle(
+            "rocket-fc",
+            HashMap::from([("../escape.txt".to_string(), "escape".to_string())]),
+        );
+
+        assert!(result.is_err());
+        assert!(!temp_dir.path().join("projects").exists());
+        assert!(!temp_dir.path().join("escape.txt").exists());
+    }
+
+    #[test]
+    fn write_kicad_bundle_rejects_nested_filename() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+
+        let result = store.write_kicad_bundle(
+            "rocket-fc",
+            HashMap::from([("nested/file.kicad_sch".to_string(), "contents".to_string())]),
+        );
+
+        assert!(result.is_err());
+        assert!(!temp_dir.path().join("projects").exists());
+    }
+
+    #[test]
+    fn write_kicad_bundle_rejects_empty_filename() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+
+        let result = store.write_kicad_bundle(
+            "rocket-fc",
+            HashMap::from([("".to_string(), "contents".to_string())]),
+        );
+
+        assert!(result.is_err());
+        assert!(!temp_dir.path().join("projects").exists());
+    }
+
+    #[test]
+    fn write_kicad_bundle_rejects_invalid_project_id() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+
+        let result = store.write_kicad_bundle(
+            "../escape",
+            HashMap::from([("rocket-fc.kicad_sch".to_string(), "contents".to_string())]),
+        );
+
+        assert!(result.is_err());
+        assert!(!temp_dir.path().join("projects").exists());
+        assert!(!temp_dir.path().join("escape").exists());
+    }
+
+    #[test]
+    fn write_kicad_bundle_rejects_case_conflicting_filenames() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+
+        let result = store.write_kicad_bundle(
+            "rocket-fc",
+            HashMap::from([
+                ("Foo.kicad_sch".to_string(), "upper".to_string()),
+                ("foo.kicad_sch".to_string(), "lower".to_string()),
+            ]),
+        );
+
+        assert!(result.is_err());
+        assert!(!temp_dir.path().join("projects").exists());
     }
 }
