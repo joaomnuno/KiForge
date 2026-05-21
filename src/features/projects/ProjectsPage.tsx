@@ -6,6 +6,7 @@ import { ConfirmDialog } from "../../components/ui/Dialog";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatTimestamp } from "../../lib/date-format";
+import { isTauriRuntime } from "../../lib/runtime";
 import type { WorkspaceProject } from "../../types/domain";
 import { deriveProjectStatus, getProjectProgress } from "./project-progress";
 import { useWorkspaceStore } from "./project-store";
@@ -35,6 +36,7 @@ export function ProjectsPage() {
   const duplicateProject = useWorkspaceStore((state) => state.duplicateProject);
   const deleteProject = useWorkspaceStore((state) => state.deleteProject);
   const exportProject = useWorkspaceStore((state) => state.exportProject);
+  const isDesktopRuntime = isTauriRuntime();
   const isBusy = isSaving || isExporting;
   const [activeFilter, setActiveFilter] =
     useState<ProjectFilter>("All Projects");
@@ -87,6 +89,10 @@ export function ProjectsPage() {
   }
 
   function handleDeleteProject(projectId: string, projectName: string) {
+    if (!isDesktopRuntime) {
+      return;
+    }
+
     setPendingDelete({ projectId, projectName });
   }
 
@@ -313,9 +319,14 @@ export function ProjectsPage() {
                     Rename
                   </Button>
                   <Button
-                    disabled={isBusy}
+                    disabled={isBusy || !isDesktopRuntime}
                     onClick={() =>
                       handleDeleteProject(project.id, project.name)
+                    }
+                    title={
+                      isDesktopRuntime
+                        ? undefined
+                        : "Open the desktop app to delete projects."
                     }
                     type="button"
                     variant="ghost"

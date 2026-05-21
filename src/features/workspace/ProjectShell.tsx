@@ -3,6 +3,7 @@ import { Link, Navigate, Outlet } from "react-router-dom";
 import clsx from "clsx";
 import { Button } from "../../components/ui/Button";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { isTauriRuntime } from "../../lib/runtime";
 import { useWorkspaceStore } from "../projects/project-store";
 import {
   deriveProjectStatus,
@@ -31,6 +32,7 @@ export function ProjectShell() {
     () => ({ setInspector }),
     [setInspector]
   );
+  const isDesktopRuntime = isTauriRuntime();
 
   if (currentProject == null) {
     return <Navigate to="/projects" replace />;
@@ -47,6 +49,7 @@ export function ProjectShell() {
   const canExport = progress.steps.every(
     (step) => step.id === "export" || step.status === "complete"
   );
+  const canExportInRuntime = isDesktopRuntime && canExport;
 
   return (
     <div className="project-shell">
@@ -70,12 +73,20 @@ export function ProjectShell() {
           </Button>
           <Button
             variant="primary"
-            disabled={!canExport || isExporting}
-            onClick={() => void exportKicadBundleForCurrentProject()}
+            disabled={!canExportInRuntime || isExporting}
+            onClick={() => {
+              if (!canExportInRuntime) {
+                return;
+              }
+
+              void exportKicadBundleForCurrentProject();
+            }}
             title={
-              canExport
-                ? "Write the KiCad starter bundle into the project's kicad/ directory"
-                : "Resolve every step (no errors, every device connected) before exporting"
+              !isDesktopRuntime
+                ? "Open the desktop app to export KiCad bundles."
+                : canExport
+                  ? "Write the KiCad starter bundle into the project's kicad/ directory"
+                  : "Resolve every step (no errors, every device connected) before exporting"
             }
           >
             {isExporting ? "Exporting..." : "Export KiCad bundle"}

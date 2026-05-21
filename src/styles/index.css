@@ -37,6 +37,36 @@ button {
   cursor: pointer;
 }
 
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-root > .shell,
+.app-root > .project-shell {
+  flex: 1;
+  min-height: 0;
+}
+
+.web-preview-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 8px 28px;
+  background: var(--surface-low);
+  border-bottom: 1px solid var(--outline);
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.web-preview-banner__label {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
 .shell {
   min-height: 100vh;
   display: grid;
