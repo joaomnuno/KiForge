@@ -6,6 +6,8 @@
   "summary": "6-axis IMU with low-noise accel and gyro readings.",
   "voltage": "1.71V - 3.6V",
   "packageName": "QFN-14",
+  "kicadLibId": "ICM-42688-P:ICM-42688-P",
+  "vendoredSymbolPath": "catalog/symbols/snapeda/ICM-42688-P.kicad_sym",
   "i2cAddress": "0x68",
   "supportedProtocols": ["SPI", "I2C", "GPIO"],
   "connectionOptions": [
