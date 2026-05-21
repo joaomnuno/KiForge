@@ -1,4 +1,6 @@
 import clsx from "clsx";
+import "./StatusBadge.css";
+
 interface StatusBadgeProps {
   label: string;
 }

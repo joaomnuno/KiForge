@@ -1,5 +1,6 @@
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import type { ReactElement, ReactNode } from "react";
+import "./Tooltip.css";
 
 type TooltipSide = "top" | "right" | "bottom" | "left";
 

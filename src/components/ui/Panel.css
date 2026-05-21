@@ -1,0 +1,19 @@
+.panel {
+  border-radius: var(--radius-lg);
+  background: rgba(28, 27, 27, 0.92);
+  padding: 20px;
+  box-shadow: var(--shadow-soft);
+}
+
+.panel__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}

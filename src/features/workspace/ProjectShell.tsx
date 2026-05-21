@@ -12,6 +12,7 @@ import {
 } from "../projects/project-progress";
 import { ProjectProgressStrip } from "./ProjectProgressStrip";
 import type { ProjectShellContext } from "./project-shell-context";
+import "./ProjectShell.css";
 
 export function ProjectShell() {
   const currentProject = useWorkspaceStore((state) => state.currentProject);
