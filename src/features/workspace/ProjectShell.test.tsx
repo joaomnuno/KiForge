@@ -7,13 +7,14 @@ import { ProjectShell } from "./ProjectShell";
 import { useProjectShell } from "./project-shell-context";
 import { useWorkspaceStore } from "../projects/project-store";
 import type {
-  ProjectExportResult,
   WorkspaceConnection,
   WorkspaceProject,
   WorkspaceProjectComponent
 } from "../../types/domain";
 
-function fakeProject(): WorkspaceProject {
+function fakeProject(
+  overrides: Partial<WorkspaceProject> = {}
+): WorkspaceProject {
   return {
     id: "rocket-fc",
     name: "Rocket FC",
@@ -36,7 +37,8 @@ function fakeProject(): WorkspaceProject {
     connections: [],
     issues: [],
     createdAt: "2026-05-19T00:00:00.000Z",
-    updatedAt: "2026-05-19T00:00:00.000Z"
+    updatedAt: "2026-05-19T00:00:00.000Z",
+    ...overrides
   };
 }
 
@@ -143,18 +145,6 @@ function fakeValidConnection(
   };
 }
 
-function readyExportResultFor(projectId: string): ProjectExportResult {
-  return {
-    projectId,
-    projectName: "Rocket FC",
-    fileName: `${projectId}.kicad_pro`,
-    target: "/tmp/kicad",
-    kind: "file-path",
-    message: "ok",
-    exportedAt: "2026-05-21T00:00:00.000Z"
-  };
-}
-
 describe("ProjectShell export button", () => {
   it("renders the Export button disabled when the project is not Ready to Generate", () => {
     renderShellWith(<p>main content</p>);
@@ -199,11 +189,12 @@ describe("ProjectShell export button", () => {
         ...fakeProject(),
         status: "Draft", // stored
         components: [fakeComponent("flash", "Flash")],
-        connections: [fakeValidConnection("c1", "flash")]
-      },
-      exportResult: readyExportResultFor("rocket-fc")
+        connections: [fakeValidConnection("c1", "flash")],
+        lastExportedAt: "2026-05-21T10:15:30.000Z"
+      }
     });
     renderShellWith(<p>main content</p>);
     expect(screen.getByText("Generated")).toBeInTheDocument();
+    expect(screen.queryByText("Draft")).not.toBeInTheDocument();
   });
 });

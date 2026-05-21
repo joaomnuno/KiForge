@@ -5,12 +5,21 @@ import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { formatTimestamp } from "../../lib/date-format";
+import type { WorkspaceProject } from "../../types/domain";
+import { deriveProjectStatus, getProjectProgress } from "./project-progress";
 import { useWorkspaceStore } from "./project-store";
 
 const filterPills = ["All Projects", "Recent", "Ready to generate"] as const;
 type ProjectFilter = (typeof filterPills)[number];
 
 const RECENT_PROJECT_LIMIT = 5;
+
+function getVisibleProjectStatus(project: WorkspaceProject) {
+  return deriveProjectStatus(
+    getProjectProgress(project),
+    Boolean(project.lastExportedAt)
+  );
+}
 
 export function ProjectsPage() {
   const navigate = useNavigate();
@@ -37,7 +46,7 @@ export function ProjectsPage() {
           .slice(0, RECENT_PROJECT_LIMIT);
       case "Ready to generate":
         return projects.filter(
-          (project) => project.status === "Ready to Generate"
+          (project) => getVisibleProjectStatus(project) === "Ready to Generate"
         );
       case "All Projects":
       default:
@@ -235,23 +244,23 @@ export function ProjectsPage() {
                     <p className="eyebrow">Project</p>
                     <h2>{project.name}</h2>
                   </div>
-                  <StatusBadge label={project.status} />
+                  <StatusBadge label={getVisibleProjectStatus(project)} />
                 </div>
 
-                <p className="project-card__summary">{project.summary}</p>
+                <p className="project-card__summary">{project.description}</p>
 
                 <dl className="stats-grid">
                   <div>
                     <dt>Controller</dt>
-                    <dd>{project.controller}</dd>
+                    <dd>{project.controller.name}</dd>
                   </div>
                   <div>
                     <dt>Devices</dt>
-                    <dd>{project.deviceCount}</dd>
+                    <dd>{project.components.length}</dd>
                   </div>
                   <div>
                     <dt>Interfaces</dt>
-                    <dd>{project.interfaceCount}</dd>
+                    <dd>{project.connections.length}</dd>
                   </div>
                   <div>
                     <dt>Updated</dt>

@@ -2,7 +2,10 @@ import { Link } from "react-router-dom";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useWorkspaceStore } from "../projects/project-store";
-import { getProjectProgress } from "../projects/project-progress";
+import {
+  deriveProjectStatus,
+  getProjectProgress
+} from "../projects/project-progress";
 
 export function ProjectOverviewPage() {
   const currentProject = useWorkspaceStore((state) => state.currentProject);
@@ -13,6 +16,10 @@ export function ProjectOverviewPage() {
   }
 
   const progress = getProjectProgress(currentProject, exportResult);
+  const projectStatus = deriveProjectStatus(
+    progress,
+    Boolean(currentProject.lastExportedAt)
+  );
   const nextStep = progress.nextStepId
     ? (progress.steps.find((step) => step.id === progress.nextStepId) ?? null)
     : null;
@@ -33,7 +40,7 @@ export function ProjectOverviewPage() {
         description={
           currentProject.description || "No project description yet."
         }
-        headerActions={<StatusBadge label={currentProject.status} />}
+        headerActions={<StatusBadge label={projectStatus} />}
       >
         {nextStep ? (
           <div className="button-group">

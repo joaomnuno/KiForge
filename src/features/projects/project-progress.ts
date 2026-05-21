@@ -228,6 +228,16 @@ function buildExportStep(
     };
   }
 
+  if (project?.lastExportedAt) {
+    return {
+      id: "export",
+      label: "Export",
+      status: "complete",
+      summary: "Exported previously",
+      href: "/workspace/overview"
+    };
+  }
+
   return {
     id: "export",
     label: "Export",
