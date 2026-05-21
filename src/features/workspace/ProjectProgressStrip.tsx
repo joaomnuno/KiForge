@@ -1,20 +1,15 @@
 import { NavLink } from "react-router-dom";
-import type { ProjectProgress } from "../projects/project-progress";
+import { Tooltip } from "../../components/ui/Tooltip";
+import type {
+  ProjectProgress,
+  ProjectStepId
+} from "../projects/project-progress";
 
 interface ProjectProgressStripProps {
   progress: ProjectProgress;
 }
 
 export function ProjectProgressStrip({ progress }: ProjectProgressStripProps) {
-  const seenHrefs = new Set<string>();
-  const visibleSteps = progress.steps.filter((step) => {
-    if (seenHrefs.has(step.href)) {
-      return false;
-    }
-    seenHrefs.add(step.href);
-    return true;
-  });
-
   return (
     <nav className="progress-strip" aria-label="Project progress">
       <div className="progress-strip__overall">
@@ -26,11 +21,9 @@ export function ProjectProgressStrip({ progress }: ProjectProgressStripProps) {
         </span>
       </div>
       <ol className="progress-strip__steps">
-        {visibleSteps.map((step) => (
-          <li
-            key={step.id}
-            className={`progress-strip__step progress-strip__step--${step.status}`}
-          >
+        {progress.steps.map((step) => {
+          const targetTooltip = getStepTargetTooltip(step.id);
+          const stepLink = (
             <NavLink
               to={step.href}
               className={({ isActive }) =>
@@ -44,9 +37,35 @@ export function ProjectProgressStrip({ progress }: ProjectProgressStripProps) {
               <span className="progress-strip__label">{step.label}</span>
               <span className="progress-strip__summary">{step.summary}</span>
             </NavLink>
-          </li>
-        ))}
+          );
+
+          return (
+            <li
+              key={step.id}
+              className={`progress-strip__step progress-strip__step--${step.status}`}
+            >
+              {targetTooltip ? (
+                <Tooltip content={targetTooltip} side="bottom">
+                  {stepLink}
+                </Tooltip>
+              ) : (
+                stepLink
+              )}
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );
+}
+
+function getStepTargetTooltip(stepId: ProjectStepId): string | null {
+  switch (stepId) {
+    case "pin-mapping":
+      return "Opens /workspace/connections for pin assignment.";
+    case "validation":
+      return "Opens /workspace/overview until Validation has its own screen.";
+    default:
+      return null;
+  }
 }
