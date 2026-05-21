@@ -38,26 +38,46 @@ export function ProjectsPage() {
   const isBusy = isSaving || isExporting;
   const [activeFilter, setActiveFilter] =
     useState<ProjectFilter>("All Projects");
+  const [searchValue, setSearchValue] = useState("");
   const [pendingDelete, setPendingDelete] = useState<{
     projectId: string;
     projectName: string;
   } | null>(null);
 
+  const normalizedSearch = searchValue.trim().toLowerCase();
+
   const filteredProjects = useMemo(() => {
-    switch (activeFilter) {
-      case "Recent":
-        return [...projects]
-          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-          .slice(0, RECENT_PROJECT_LIMIT);
-      case "Ready to generate":
-        return projects.filter(
-          (project) => getVisibleProjectStatus(project) === "Ready to Generate"
-        );
-      case "All Projects":
-      default:
-        return projects;
+    const projectsByFilter = (() => {
+      switch (activeFilter) {
+        case "Recent":
+          return [...projects]
+            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+            .slice(0, RECENT_PROJECT_LIMIT);
+        case "Ready to generate":
+          return projects.filter(
+            (project) =>
+              getVisibleProjectStatus(project) === "Ready to Generate"
+          );
+        case "All Projects":
+        default:
+          return projects;
+      }
+    })();
+
+    if (!normalizedSearch) {
+      return projectsByFilter;
     }
-  }, [activeFilter, projects]);
+
+    return projectsByFilter.filter((project) =>
+      [project.name, project.id, project.controller.name, project.controller.id]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch)
+    );
+  }, [activeFilter, normalizedSearch, projects]);
+
+  const trimmedSearch = searchValue.trim();
+  const hasSearch = trimmedSearch.length > 0;
 
   async function handleOpenProject(projectId: string) {
     await openProject(projectId);
@@ -104,7 +124,9 @@ export function ProjectsPage() {
   return (
     <AppScaffold
       activeNav="projects"
-      searchPlaceholder="Search projects, MCUs, peripherals..."
+      searchPlaceholder="Search projects, controllers, or ids..."
+      searchValue={searchValue}
+      onSearchChange={setSearchValue}
       inspector={
         <>
           <Panel
@@ -223,20 +245,32 @@ export function ProjectsPage() {
 
         {projects.length > 0 && filteredProjects.length === 0 ? (
           <Panel
-            title={`No projects match "${activeFilter}"`}
+            title={
+              hasSearch
+                ? `No projects match "${trimmedSearch}"`
+                : `No projects match "${activeFilter}"`
+            }
             description={
-              activeFilter === "Ready to generate"
-                ? "Finish pin mapping on a project to surface it here."
-                : "Try a different filter to see more projects."
+              hasSearch
+                ? "Search checks project name, controller, and project id inside the active filter."
+                : activeFilter === "Ready to generate"
+                  ? "Finish pin mapping on a project to surface it here."
+                  : "Try a different filter to see more projects."
             }
           >
             <div className="button-group">
               <Button
-                onClick={() => setActiveFilter("All Projects")}
+                onClick={() => {
+                  if (hasSearch) {
+                    setSearchValue("");
+                    return;
+                  }
+                  setActiveFilter("All Projects");
+                }}
                 type="button"
                 variant="secondary"
               >
-                Show all projects
+                {hasSearch ? "Clear search" : "Show all projects"}
               </Button>
             </div>
           </Panel>

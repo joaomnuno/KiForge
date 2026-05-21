@@ -15,7 +15,6 @@ export function TemplatesPage() {
   return (
     <AppScaffold
       activeNav="templates"
-      searchPlaceholder="Search starter templates..."
       inspector={
         <>
           <Panel
