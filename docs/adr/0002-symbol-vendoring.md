@@ -8,11 +8,11 @@
 
 PR #38 wired the bundle exporter to place stock KiCad symbols for the four catalog parts that exist in KiCad 7+ stock libraries (STM32F405RG, STM32H743ZI, RP2040, W25Q128JV). The four remaining catalog parts have **no stock KiCad symbol** and are currently skipped at export time:
 
-| Part | Role | Stock KiCad symbol? |
-|---|---|---|
-| ICM-42688-P (TDK IMU) | Sensor | No |
-| BMP388 (Bosch barometer) | Sensor | No |
-| CH340K (USB-UART bridge) | Interface | No |
+| Part                           | Role      | Stock KiCad symbol?           |
+| ------------------------------ | --------- | ----------------------------- |
+| ICM-42688-P (TDK IMU)          | Sensor    | No                            |
+| BMP388 (Bosch barometer)       | Sensor    | No                            |
+| CH340K (USB-UART bridge)       | Interface | No                            |
 | Tag-Connect 6-pin debug header | Connector | Maybe (`Connector.kicad_sym`) |
 
 A user exporting a project that includes any of these gets a valid-but-incomplete schematic. To close the loop we need a vendoring strategy.
@@ -29,12 +29,12 @@ The runtime exporter only **reads** vendored files; it never **writes** to `cata
 
 ## Sources matrix
 
-| Part | Source | License | Vendored file | Notes |
-|---|---|---|---|---|
-| Tag-Connect 6-pin (TC2030-IDC) | KiCad official `Connector.kicad_sym` | CC-BY-SA 4.0 + design exception | `catalog/symbols/kicad-official/TagConnect.kicad_sym` | Extract single symbol from KiCad's stock lib. |
-| BMP388 | SnapEDA / SnapMagic download | CC-BY-SA 4.0 + design exception 1.0 | `catalog/symbols/snapeda/BMP388.kicad_sym` | Counts against SnapEDA's 10-file-per-distribution cap. |
-| ICM-42688-P | SnapEDA / SnapMagic download | CC-BY-SA 4.0 + design exception 1.0 | `catalog/symbols/snapeda/ICM-42688-P.kicad_sym` | Same cap. |
-| CH340K | SnapEDA primary; WCH community lib as fallback | CC-BY-SA 4.0 + design exception 1.0 (SnapEDA) / unspecified (community) | `catalog/symbols/snapeda/CH340K.kicad_sym` | Prefer SnapEDA for licence clarity. |
+| Part                           | Source                                         | License                                                                 | Vendored file                                         | Notes                                                  |
+| ------------------------------ | ---------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------ |
+| Tag-Connect 6-pin (TC2030-IDC) | KiCad official `Connector.kicad_sym`           | CC-BY-SA 4.0 + design exception                                         | `catalog/symbols/kicad-official/TagConnect.kicad_sym` | Extract single symbol from KiCad's stock lib.          |
+| BMP388                         | SnapEDA / SnapMagic download                   | CC-BY-SA 4.0 + design exception 1.0                                     | `catalog/symbols/snapeda/BMP388.kicad_sym`            | Counts against SnapEDA's 10-file-per-distribution cap. |
+| ICM-42688-P                    | SnapEDA / SnapMagic download                   | CC-BY-SA 4.0 + design exception 1.0                                     | `catalog/symbols/snapeda/ICM-42688-P.kicad_sym`       | Same cap.                                              |
+| CH340K                         | SnapEDA primary; WCH community lib as fallback | CC-BY-SA 4.0 + design exception 1.0 (SnapEDA) / unspecified (community) | `catalog/symbols/snapeda/CH340K.kicad_sym`            | Prefer SnapEDA for licence clarity.                    |
 
 Vendored count after this slice: **4 files**, well under SnapEDA's 10-file ceiling.
 
@@ -53,14 +53,14 @@ Not required (but ship anyway for hygiene):
 
 ## Alternatives considered
 
-| Approach | Why not |
-|---|---|
-| Runtime download from SnapEDA / Ultra Librarian | Adds network dependency + auth + per-call rate limit. Tauri capabilities would need `http:` plugin. Defeats offline-first. |
-| Synthesize symbols from datasheet pinouts hand-coded in TS | Maintenance burden — every part requires a TS module mirroring the symbol body. JSON + raw `.kicad_sym` files are simpler and the format is already battle-tested by KiCad. |
-| Defer to "user provides their own symbol library" | Beta blocker. The smoke flow expects "open the bundle → see the parts". A blank or placeholder symbol is worse UX than a slightly-imperfect SnapEDA one. |
-| Ultra Librarian as a source | License terms for redistribution in a Tauri app are not clearly documented. SnapEDA's design exception is explicit. |
-| Embed symbol body inline in catalog JSON (`vendoredSymbolBody: "(symbol ..."`) | Bigger JSON files, lost diff readability vs a real `.kicad_sym`, no way for a contributor to open + edit the symbol in KiCad's Symbol Editor. |
-| Inline-embed only properties + pins (skip vendored files entirely, synthesize per part) | Acceptable fallback (KiCad shows a grey rectangle placeholder), but ships ugly output. Use only when no licensed source exists. |
+| Approach                                                                                | Why not                                                                                                                                                                     |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime download from SnapEDA / Ultra Librarian                                         | Adds network dependency + auth + per-call rate limit. Tauri capabilities would need `http:` plugin. Defeats offline-first.                                                  |
+| Synthesize symbols from datasheet pinouts hand-coded in TS                              | Maintenance burden — every part requires a TS module mirroring the symbol body. JSON + raw `.kicad_sym` files are simpler and the format is already battle-tested by KiCad. |
+| Defer to "user provides their own symbol library"                                       | Beta blocker. The smoke flow expects "open the bundle → see the parts". A blank or placeholder symbol is worse UX than a slightly-imperfect SnapEDA one.                    |
+| Ultra Librarian as a source                                                             | License terms for redistribution in a Tauri app are not clearly documented. SnapEDA's design exception is explicit.                                                         |
+| Embed symbol body inline in catalog JSON (`vendoredSymbolBody: "(symbol ..."`)          | Bigger JSON files, lost diff readability vs a real `.kicad_sym`, no way for a contributor to open + edit the symbol in KiCad's Symbol Editor.                               |
+| Inline-embed only properties + pins (skip vendored files entirely, synthesize per part) | Acceptable fallback (KiCad shows a grey rectangle placeholder), but ships ugly output. Use only when no licensed source exists.                                             |
 
 ## What changes in the codebase
 
