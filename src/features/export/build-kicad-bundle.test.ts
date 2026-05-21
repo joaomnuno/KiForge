@@ -272,4 +272,30 @@ describe("buildKicadBundle", () => {
     const nameNode = childSymbols[0].items[1];
     expect(nameNode.kind === "string" ? nameNode.value : null).toBe(libId);
   });
+
+  it("embeds the vendored BMP388 catalog symbol body", () => {
+    const libId = "BMP388:BMP388";
+    const body = loadVendoredSymbols().get(libId);
+    if (!body) {
+      throw new Error(`Missing vendored body for ${libId}`);
+    }
+
+    const symbol: SchematicSymbol = {
+      libId,
+      at: { x: 50.8, y: 25.4, angle: 0 },
+      uuid: "77777777-7777-7777-7777-777777777777",
+      properties: []
+    };
+    const files = buildKicadBundle(mkProject(), {
+      symbols: [symbol],
+      vendoredSymbols: new Map([[libId, body]])
+    });
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    const libSymbols = findChild(root, "lib_symbols");
+    expect(libSymbols).not.toBeNull();
+    const childSymbols = findChildren(libSymbols!, "symbol");
+    expect(childSymbols).toHaveLength(1);
+    const nameNode = childSymbols[0].items[1];
+    expect(nameNode.kind === "string" ? nameNode.value : null).toBe(libId);
+  });
 });

@@ -9,13 +9,14 @@ Symbols in this directory are vendored from the official KiCad symbol libraries.
 
 ## snapeda/
 
-Reserved for future Phase 2 symbol-vendoring PRs.
+Symbols in this directory are vendored from SnapEDA / SnapMagic downloads.
 
-- Expected license: Creative Commons Attribution-ShareAlike 4.0 International (CC-BY-SA 4.0) + Design Exception 1.0.
-- No SnapEDA symbols are vendored in this PR.
+- License: Creative Commons Attribution-ShareAlike 4.0 International (CC-BY-SA 4.0) + Design Exception 1.0.
+- SnapEDA files in this PR: 1 of 3 planned.
 
 ## Per-file attribution
 
 | File path                                             | Source URL                                                                        | License                                          |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------ |
 | `catalog/symbols/kicad-official/TagConnect.kicad_sym` | https://gitlab.com/kicad/libraries/kicad-symbols/-/blob/8.0.4/Connector.kicad_sym | CC-BY-SA 4.0 + KiCad libraries license exception |
+| `catalog/symbols/snapeda/BMP388.kicad_sym`            | https://www.snapeda.com/parts/BMP388/Bosch/                                       | CC-BY-SA 4.0 + Design Exception 1.0              |

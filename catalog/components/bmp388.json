@@ -6,6 +6,8 @@
   "summary": "Precision barometric sensor with SPI and I2C support.",
   "voltage": "1.65V - 3.6V",
   "packageName": "LGA-10",
+  "kicadLibId": "BMP388:BMP388",
+  "vendoredSymbolPath": "catalog/symbols/snapeda/BMP388.kicad_sym",
   "i2cAddress": "0x76",
   "supportedProtocols": ["SPI", "I2C", "GPIO"],
   "connectionOptions": [
