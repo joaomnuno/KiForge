@@ -16,6 +16,7 @@ import {
   type ConnectionDraft
 } from "./planner";
 import { useWorkspaceStore } from "../projects/project-store";
+import { useProjectShell } from "../workspace/project-shell-context";
 
 export function ConnectionsPage() {
   const currentProject = useWorkspaceStore((state) => state.currentProject);
@@ -196,95 +197,115 @@ export function ConnectionsPage() {
     setDraft(buildConnectionDraft(currentProject, activeComponent.id));
   }
 
+  const { setInspector } = useProjectShell();
+  useEffect(() => {
+    if (!currentProject || currentProject.components.length === 0) {
+      setInspector(null);
+      return;
+    }
+    setInspector(
+      <>
+        <Panel
+          eyebrow="Connection inspector"
+          title={
+            activeComponent
+              ? `${activeComponent.instanceName}${draft?.protocol ? ` | ${draft.protocol}` : ""}`
+              : "No device selected"
+          }
+          description={
+            draft?.controllerInterface
+              ? `${draft.controllerInterface} · ${draft.busMode.toLowerCase()} bus.`
+              : "Pick a protocol and interface to assign pins."
+          }
+        >
+          {signalRows.length === 0 ? (
+            <p>No signal rows yet.</p>
+          ) : (
+            <table className="signal-table">
+              <thead>
+                <tr>
+                  <th>Signal</th>
+                  <th>Pin</th>
+                  <th>Options</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {signalRows.map((row) => (
+                  <tr key={row.signal}>
+                    <td>{row.signal}</td>
+                    <td>{row.selectedPin || "Unassigned"}</td>
+                    <td>{row.candidates.length}</td>
+                    <td>{row.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+
+        <Panel
+          eyebrow="Interface availability"
+          title={
+            draft?.protocol
+              ? `${draft.protocol} controller paths`
+              : "Choose a protocol"
+          }
+          description="Pick an interface to see availability."
+        >
+          {interfaceOptions.length === 0 ? (
+            <p>No controller interfaces are available for this protocol yet.</p>
+          ) : (
+            <ul className="list-reset stack-sm">
+              {interfaceOptions.map((option) => (
+                <li key={option.name} className="availability-item">
+                  <div>
+                    <strong>{option.name}</strong>
+                    <span>{option.description}</span>
+                  </div>
+                  <StatusBadge label={option.usageLabel} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel
+          eyebrow="Validation"
+          title="Draft issues"
+          description="Open issues for this draft."
+        >
+          {draftIssues.length === 0 ? (
+            <p>No draft issues right now.</p>
+          ) : (
+            <ul className="list-reset stack-sm">
+              {draftIssues.map((issue) => (
+                <li key={issue.id} className={`issue issue--${issue.severity}`}>
+                  {issue.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </>
+    );
+    return () => setInspector(null);
+  }, [
+    setInspector,
+    currentProject,
+    activeComponent,
+    draft,
+    signalRows,
+    interfaceOptions,
+    draftIssues
+  ]);
+
   if (!currentProject || currentProject.components.length === 0) {
     return null;
   }
 
   return (
     <>
-      <Panel
-        eyebrow="Connection inspector"
-        title={
-          activeComponent
-            ? `${activeComponent.instanceName}${draft?.protocol ? ` | ${draft.protocol}` : ""}`
-            : "No device selected"
-        }
-        description={
-          draft?.controllerInterface
-            ? `${draft.controllerInterface} · ${draft.busMode.toLowerCase()} bus.`
-            : "Pick a protocol and interface to assign pins."
-        }
-      >
-        {signalRows.length === 0 ? (
-          <p>No signal rows yet.</p>
-        ) : (
-          <table className="signal-table">
-            <thead>
-              <tr>
-                <th>Signal</th>
-                <th>Pin</th>
-                <th>Options</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {signalRows.map((row) => (
-                <tr key={row.signal}>
-                  <td>{row.signal}</td>
-                  <td>{row.selectedPin || "Unassigned"}</td>
-                  <td>{row.candidates.length}</td>
-                  <td>{row.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Panel>
-
-      <Panel
-        eyebrow="Interface availability"
-        title={
-          draft?.protocol
-            ? `${draft.protocol} controller paths`
-            : "Choose a protocol"
-        }
-        description="Pick an interface to see availability."
-      >
-        {interfaceOptions.length === 0 ? (
-          <p>No controller interfaces are available for this protocol yet.</p>
-        ) : (
-          <ul className="list-reset stack-sm">
-            {interfaceOptions.map((option) => (
-              <li key={option.name} className="availability-item">
-                <div>
-                  <strong>{option.name}</strong>
-                  <span>{option.description}</span>
-                </div>
-                <StatusBadge label={option.usageLabel} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
-
-      <Panel
-        eyebrow="Validation"
-        title="Draft issues"
-        description="Open issues for this draft."
-      >
-        {draftIssues.length === 0 ? (
-          <p>No draft issues right now.</p>
-        ) : (
-          <ul className="list-reset stack-sm">
-            {draftIssues.map((issue) => (
-              <li key={issue.id} className={`issue issue--${issue.severity}`}>
-                {issue.message}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
-
       <div className="connections-layout">
         <Panel eyebrow="Project devices" title="Navigator">
           <div className="device-list">
