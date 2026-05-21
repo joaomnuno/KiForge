@@ -30,6 +30,8 @@ const componentConnectionOptionSchema = z.object({
   optionalSignals: z.array(componentConnectionSignalSchema)
 });
 
+const KICAD_LIB_ID_PATTERN = /^[^\s:]+:[^\s:]+$/;
+
 const controllerSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -38,7 +40,14 @@ const controllerSchema = z.object({
   notes: z.string().min(1),
   protocols: z.array(protocolSchema).min(1),
   interfaces: z.array(controllerInterfaceSchema).min(1),
-  gpioPins: z.array(z.string().min(1)).min(1)
+  gpioPins: z.array(z.string().min(1)).min(1),
+  kicadLibId: z
+    .string()
+    .regex(
+      KICAD_LIB_ID_PATTERN,
+      'kicadLibId must be in the form "Library:Symbol"'
+    )
+    .optional()
 });
 
 const I2C_ADDRESS_PATTERN = /^0x[0-9a-fA-F]{2}$/;
@@ -54,6 +63,13 @@ const componentSchema = z.object({
   i2cAddress: z
     .string()
     .regex(I2C_ADDRESS_PATTERN, "i2cAddress must be a hex byte like 0x76")
+    .optional(),
+  kicadLibId: z
+    .string()
+    .regex(
+      KICAD_LIB_ID_PATTERN,
+      'kicadLibId must be in the form "Library:Symbol"'
+    )
     .optional(),
   supportedProtocols: z.array(protocolSchema).min(1),
   connectionOptions: z.array(componentConnectionOptionSchema)

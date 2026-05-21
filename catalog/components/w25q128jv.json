@@ -6,6 +6,7 @@
   "summary": "SPI NOR flash for high-rate logging and boot assets.",
   "voltage": "2.7V - 3.6V",
   "packageName": "SOIC-8 / WSON-8",
+  "kicadLibId": "Memory_Flash:W25Q128JVS",
   "supportedProtocols": ["SPI", "GPIO"],
   "connectionOptions": [
     {

@@ -4,6 +4,7 @@
   "packageName": "LQFP-144",
   "voltage": "3.3V logic",
   "notes": "High-end controller for dense sensing, storage, and telemetry.",
+  "kicadLibId": "MCU_ST_STM32H7:STM32H743ZITx",
   "protocols": ["SPI", "I2C", "UART", "USB", "SWD", "GPIO"],
   "interfaces": [
     {
