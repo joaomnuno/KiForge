@@ -3,13 +3,37 @@ import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import {
+  Tabs,
+  TabsList,
+  TabsPanel,
+  TabsTrigger
+} from "../../components/ui/Tabs";
 import { catalog } from "../catalog/catalog";
 import { useWorkspaceStore } from "../projects/project-store";
 import {
   deriveProjectStatus,
-  getProjectProgress
+  getProjectProgress,
+  type ProjectStepId,
+  type ProjectStepProgress
 } from "../projects/project-progress";
 import { voltageDomains, type VoltageDomain } from "../../types/domain";
+
+type OverviewTabValue = "setup" | "connectivity" | "output";
+
+const overviewTabs: {
+  value: OverviewTabValue;
+  label: string;
+  stepIds: ProjectStepId[];
+}[] = [
+  { value: "setup", label: "Setup", stepIds: ["identity", "components"] },
+  {
+    value: "connectivity",
+    label: "Connectivity",
+    stepIds: ["connections", "pin-mapping"]
+  },
+  { value: "output", label: "Output", stepIds: ["validation", "export"] }
+];
 
 export function ProjectOverviewPage() {
   const currentProject = useWorkspaceStore((state) => state.currentProject);
@@ -33,6 +57,8 @@ export function ProjectOverviewPage() {
     progress,
     Boolean(currentProject.lastExportedAt)
   );
+  const stepById = new Map(progress.steps.map((step) => [step.id, step]));
+  const defaultTabValue = getDefaultOverviewTab(progress.nextStepId);
   const nextStep = progress.nextStepId
     ? (progress.steps.find((step) => step.id === progress.nextStepId) ?? null)
     : null;
@@ -161,28 +187,25 @@ export function ProjectOverviewPage() {
         title="Steps"
         description="Each step links into the detailed workspace page."
       >
-        <div className="cards-grid">
-          {progress.steps.map((step) => (
-            <article
-              key={step.id}
-              className={`step-card step-card--${step.status}`}
-            >
-              <div className="project-card__header">
-                <div>
-                  <p className="eyebrow">{step.id}</p>
-                  <h3>{step.label}</h3>
-                </div>
-                <StatusBadge label={statusBadgeLabel(step.status)} />
+        <Tabs defaultValue={defaultTabValue}>
+          <TabsList aria-label="Project sections">
+            {overviewTabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {overviewTabs.map((tab) => (
+            <TabsPanel key={tab.value} value={tab.value}>
+              <div className="cards-grid">
+                {tab.stepIds.map((stepId) => {
+                  const step = stepById.get(stepId);
+                  return step ? <StepCard key={step.id} step={step} /> : null;
+                })}
               </div>
-              <p className="project-card__summary">{step.summary}</p>
-              <div className="project-card__actions">
-                <Link className="button button--secondary" to={step.href}>
-                  Open
-                </Link>
-              </div>
-            </article>
+            </TabsPanel>
           ))}
-        </div>
+        </Tabs>
       </Panel>
 
       <Panel
@@ -212,6 +235,36 @@ export function ProjectOverviewPage() {
         </dl>
       </Panel>
     </div>
+  );
+}
+
+function StepCard({ step }: { step: ProjectStepProgress }) {
+  return (
+    <article className={`step-card step-card--${step.status}`}>
+      <div className="project-card__header">
+        <div>
+          <p className="eyebrow">{step.id}</p>
+          <h3>{step.label}</h3>
+        </div>
+        <StatusBadge label={statusBadgeLabel(step.status)} />
+      </div>
+      <p className="project-card__summary">{step.summary}</p>
+      <div className="project-card__actions">
+        <Link className="button button--secondary" to={step.href}>
+          Open
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+function getDefaultOverviewTab(
+  nextStepId: ProjectStepId | null
+): OverviewTabValue {
+  return (
+    overviewTabs.find((tab) =>
+      nextStepId ? tab.stepIds.includes(nextStepId) : false
+    )?.value ?? "setup"
   );
 }
 
