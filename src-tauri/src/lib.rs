@@ -12,7 +12,8 @@ pub fn run() {
             commands::projects::rename_project,
             commands::projects::duplicate_project,
             commands::projects::delete_project,
-            commands::projects::export_project
+            commands::projects::export_project,
+            commands::projects::write_kicad_bundle
         ])
         .run(tauri::generate_context!())
         .expect("failed to run KiForge desktop shell");
