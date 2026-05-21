@@ -4,3 +4,4 @@ node_modules
 design-files
 src-tauri/target
 src-tauri/gen
+catalog/external

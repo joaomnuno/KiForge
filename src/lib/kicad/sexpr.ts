@@ -79,6 +79,14 @@ function tokenize(source: string): Token[] {
       continue;
     }
 
+    // Line comment: `;` (or `;;`, KiCad convention) through newline
+    if (ch === ";") {
+      while (offset < source.length && source[offset] !== "\n") {
+        advance();
+      }
+      continue;
+    }
+
     // Parens
     if (ch === "(") {
       const pos = here();
