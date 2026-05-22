@@ -72,6 +72,8 @@ pub fn write_kicad_bundle(
     app: AppHandle,
     project_id: String,
     files: HashMap<String, String>,
+    destination_dir: Option<String>,
 ) -> Result<String, String> {
-    project_store(&app)?.write_kicad_bundle(&project_id, files)
+    let dest = destination_dir.as_deref().map(std::path::Path::new);
+    project_store(&app)?.write_kicad_bundle(&project_id, files, dest)
 }

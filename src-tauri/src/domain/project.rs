@@ -340,22 +340,29 @@ impl ProjectStore {
         &self,
         project_id: &str,
         files: HashMap<String, String>,
+        destination_dir: Option<&Path>,
     ) -> Result<String, String> {
         validate_project_id(project_id)?;
         validate_kicad_bundle_filenames(files.keys().map(String::as_str))?;
         let mut project = self.load_project(project_id)?;
 
-        let kicad_dir = self.project_dir(project_id).join("kicad");
-        fs::create_dir_all(&kicad_dir).map_err(|error| {
+        let target_dir = match destination_dir {
+            Some(dir) => {
+                validate_external_destination_dir(dir)?;
+                dir.to_path_buf()
+            }
+            None => self.project_dir(project_id).join("kicad"),
+        };
+        fs::create_dir_all(&target_dir).map_err(|error| {
             format_path_error(
                 "Failed to create KiCad bundle directory",
-                &kicad_dir,
+                &target_dir,
                 &error,
             )
         })?;
 
         for (filename, contents) in files {
-            let file_path = kicad_dir.join(filename);
+            let file_path = target_dir.join(filename);
             write_file_atomically(
                 &file_path,
                 contents.as_bytes(),
@@ -363,10 +370,10 @@ impl ProjectStore {
             )?;
         }
 
-        let absolute_kicad_dir = fs::canonicalize(&kicad_dir).map_err(|error| {
+        let absolute_target_dir = fs::canonicalize(&target_dir).map_err(|error| {
             format_path_error(
                 "Failed to resolve KiCad bundle directory",
-                &kicad_dir,
+                &target_dir,
                 &error,
             )
         })?;
@@ -374,7 +381,7 @@ impl ProjectStore {
         project.last_exported_at = Some(current_timestamp()?);
         self.save_project(project)?;
 
-        Ok(absolute_kicad_dir.display().to_string())
+        Ok(absolute_target_dir.display().to_string())
     }
 
     fn projects_dir(&self) -> PathBuf {
@@ -551,6 +558,28 @@ fn validate_kicad_bundle_filenames<'a>(
         }
     }
 
+    Ok(())
+}
+
+fn validate_external_destination_dir(dir: &Path) -> Result<(), String> {
+    // The path crosses the IPC boundary from a Tauri-native folder picker.
+    // Even though the picker is OS-vetted, re-check the basics on the Rust
+    // side before we write into it.
+    if !dir.is_absolute() {
+        return Err(format!(
+            "Export destination {:?} must be an absolute path.",
+            dir.display()
+        ));
+    }
+    if dir.as_os_str().is_empty() {
+        return Err("Export destination cannot be empty.".into());
+    }
+    if dir.exists() && !dir.is_dir() {
+        return Err(format!(
+            "Export destination {:?} exists but is not a directory.",
+            dir.display()
+        ));
+    }
     Ok(())
 }
 
@@ -897,7 +926,7 @@ mod tests {
         ]);
 
         let kicad_path = store
-            .write_kicad_bundle(&project.id, files)
+            .write_kicad_bundle(&project.id, files, None)
             .expect("write KiCad bundle");
         let kicad_dir = temp_dir
             .path()
@@ -933,6 +962,7 @@ mod tests {
             .write_kicad_bundle(
                 &project.id,
                 HashMap::from([("rocket-fc.kicad_sch".to_string(), "old".to_string())]),
+                None,
             )
             .expect("write initial KiCad bundle");
 
@@ -940,6 +970,7 @@ mod tests {
             .write_kicad_bundle(
                 &project.id,
                 HashMap::from([("rocket-fc.kicad_sch".to_string(), "new".to_string())]),
+                None,
             )
             .expect("rewrite KiCad bundle");
 
@@ -964,6 +995,7 @@ mod tests {
             .write_kicad_bundle(
                 &project.id,
                 HashMap::from([("rocket-fc.kicad_sch".to_string(), "first".to_string())]),
+                None,
             )
             .expect("write initial KiCad bundle");
 
@@ -981,6 +1013,7 @@ mod tests {
             .write_kicad_bundle(
                 &project.id,
                 HashMap::from([("rocket-fc.kicad_sch".to_string(), "second".to_string())]),
+                None,
             )
             .expect("rewrite KiCad bundle");
 
@@ -1035,6 +1068,7 @@ mod tests {
         let result = store.write_kicad_bundle(
             "rocket-fc",
             HashMap::from([("../escape.txt".to_string(), "escape".to_string())]),
+            None,
         );
 
         assert!(result.is_err());
@@ -1050,6 +1084,7 @@ mod tests {
         let result = store.write_kicad_bundle(
             "rocket-fc",
             HashMap::from([("nested/file.kicad_sch".to_string(), "contents".to_string())]),
+            None,
         );
 
         assert!(result.is_err());
@@ -1064,6 +1099,7 @@ mod tests {
         let result = store.write_kicad_bundle(
             "rocket-fc",
             HashMap::from([("".to_string(), "contents".to_string())]),
+            None,
         );
 
         assert!(result.is_err());
@@ -1078,6 +1114,7 @@ mod tests {
         let result = store.write_kicad_bundle(
             "rocket-fc",
             HashMap::from([("rocket-fc.txt".to_string(), "contents".to_string())]),
+            None,
         );
 
         let error = result.expect_err("reject disallowed extension");
@@ -1096,6 +1133,7 @@ mod tests {
         let result = store.write_kicad_bundle(
             "rocket-fc",
             HashMap::from([(overlong_filename, "contents".to_string())]),
+            None,
         );
 
         let error = result.expect_err("reject overlong filename");
@@ -1111,6 +1149,7 @@ mod tests {
         let result = store.write_kicad_bundle(
             "../escape",
             HashMap::from([("rocket-fc.kicad_sch".to_string(), "contents".to_string())]),
+            None,
         );
 
         assert!(result.is_err());
@@ -1129,9 +1168,71 @@ mod tests {
                 ("Foo.kicad_sch".to_string(), "upper".to_string()),
                 ("foo.kicad_sch".to_string(), "lower".to_string()),
             ]),
+            None,
         );
 
         assert!(result.is_err());
         assert!(!temp_dir.path().join("projects").exists());
+    }
+
+    #[test]
+    fn write_kicad_bundle_writes_to_external_destination_when_provided() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let project = store
+            .create_project(sample_input())
+            .expect("create project");
+
+        let dest = temp_dir.path().join("custom-export-dir");
+        fs::create_dir_all(&dest).expect("create dest");
+
+        let returned = store
+            .write_kicad_bundle(
+                &project.id,
+                HashMap::from([
+                    (
+                        "rocket-fc.kicad_sch".to_string(),
+                        ";; header\n(kicad_sch)\n".to_string(),
+                    ),
+                    ("rocket-fc.kicad_pro".to_string(), "{}\n".to_string()),
+                ]),
+                Some(&dest),
+            )
+            .expect("write to external destination");
+
+        assert_eq!(
+            Path::new(&returned),
+            fs::canonicalize(&dest)
+                .expect("canonicalize dest")
+                .as_path()
+        );
+        assert!(dest.join("rocket-fc.kicad_sch").exists());
+        assert!(dest.join("rocket-fc.kicad_pro").exists());
+        // Default project_dir/kicad must NOT be touched when an external
+        // destination is supplied.
+        assert!(!temp_dir
+            .path()
+            .join("projects")
+            .join(&project.id)
+            .join("kicad")
+            .exists());
+    }
+
+    #[test]
+    fn write_kicad_bundle_rejects_relative_external_destination() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let project = store
+            .create_project(sample_input())
+            .expect("create project");
+
+        let result = store.write_kicad_bundle(
+            &project.id,
+            HashMap::from([("rocket-fc.kicad_sch".to_string(), "x".to_string())]),
+            Some(Path::new("relative/path")),
+        );
+
+        let error = result.expect_err("reject relative dest");
+        assert!(error.contains("absolute"));
     }
 }
