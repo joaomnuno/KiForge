@@ -6,6 +6,11 @@ import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { ProjectShell } from "./ProjectShell";
 import { useProjectShell } from "./project-shell-context";
 import { useWorkspaceStore } from "../projects/project-store";
+
+const tauriDialogOpen = vi.fn();
+vi.mock("@tauri-apps/plugin-dialog", () => ({
+  open: (...args: unknown[]) => tauriDialogOpen(...args)
+}));
 import type {
   WorkspaceConnection,
   WorkspaceProject,
@@ -70,6 +75,7 @@ beforeEach(() => {
 
 afterEach(() => {
   Reflect.deleteProperty(window, "__TAURI_INTERNALS__");
+  tauriDialogOpen.mockReset();
 });
 
 describe("ProjectShell inspector slot", () => {
@@ -192,7 +198,30 @@ describe("ProjectShell export button", () => {
     );
   });
 
-  it("invokes the store's KiCad bundle action when clicked", async () => {
+  it("opens the folder picker and invokes the store action with the picked dir", async () => {
+    tauriDialogOpen.mockResolvedValueOnce("/tmp/picked-export-dir");
+    const action = vi
+      .fn()
+      .mockResolvedValue({ target: "/tmp/picked-export-dir" });
+    useWorkspaceStore.setState({
+      currentProject: {
+        ...fakeProject(),
+        components: [fakeComponent("flash", "Flash")],
+        connections: [fakeValidConnection("c1", "flash")]
+      },
+      exportKicadBundleForCurrentProject: action
+    });
+    renderShellWith(<p>main content</p>);
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole("button", { name: /Export KiCad bundle/i })
+    );
+    expect(tauriDialogOpen).toHaveBeenCalledTimes(1);
+    expect(action).toHaveBeenCalledWith("/tmp/picked-export-dir");
+  });
+
+  it("does not invoke the store action when the user cancels the picker", async () => {
+    tauriDialogOpen.mockResolvedValueOnce(null);
     const action = vi.fn().mockResolvedValue(null);
     useWorkspaceStore.setState({
       currentProject: {
@@ -207,7 +236,8 @@ describe("ProjectShell export button", () => {
     await user.click(
       screen.getByRole("button", { name: /Export KiCad bundle/i })
     );
-    expect(action).toHaveBeenCalledTimes(1);
+    expect(tauriDialogOpen).toHaveBeenCalledTimes(1);
+    expect(action).not.toHaveBeenCalled();
   });
 
   it("renders the derived status (not the stored ProjectDocument.status) in the header badge", () => {

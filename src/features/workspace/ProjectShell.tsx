@@ -5,6 +5,10 @@ import { Button } from "../../components/ui/Button";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Tooltip } from "../../components/ui/Tooltip";
 import { isTauriRuntime } from "../../lib/runtime";
+import {
+  pickExportDestination,
+  rememberExportDestination
+} from "../export/export-destination";
 import { useWorkspaceStore } from "../projects/project-store";
 import {
   deriveProjectStatus,
@@ -56,25 +60,36 @@ export function ProjectShell() {
       : isExporting
         ? "Export is already running"
         : null;
+  const handleExportClick = async () => {
+    if (!canExportInRuntime) {
+      return;
+    }
+    const destination = await pickExportDestination();
+    if (destination == null) {
+      return;
+    }
+    const result = await exportKicadBundleForCurrentProject(destination);
+    if (result != null) {
+      rememberExportDestination(destination);
+    }
+  };
+
   const exportButton = (
     <Button
       variant="primary"
       disabled={!canExportInRuntime || isExporting}
       onClick={() => {
-        if (!canExportInRuntime) {
-          return;
-        }
-        void exportKicadBundleForCurrentProject();
+        void handleExportClick();
       }}
       title={
         !isDesktopRuntime
           ? "Open the desktop app to export KiCad bundles."
           : canExport
-            ? "Write the KiCad starter bundle into the project's kicad/ directory"
+            ? "Pick a folder and write the KiCad starter bundle into it"
             : "Resolve every step (no errors, every device connected) before exporting"
       }
     >
-      {isExporting ? "Exporting..." : "Export KiCad bundle"}
+      {isExporting ? "Exporting..." : "Export KiCad bundle..."}
     </Button>
   );
 

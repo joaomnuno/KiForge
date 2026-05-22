@@ -3,5 +3,5 @@
   "identifier": "main-capability",
   "description": "Capability set for the KiForge desktop shell",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "dialog:default"]
 }

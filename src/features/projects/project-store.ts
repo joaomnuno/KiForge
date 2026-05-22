@@ -54,7 +54,9 @@ interface WorkspaceState extends WorkspaceSnapshot {
   ) => Promise<WorkspaceProject | null>;
   deleteProject: (projectId: string) => Promise<void>;
   exportProject: (projectId: string) => Promise<ProjectExportResult | null>;
-  exportKicadBundleForCurrentProject: () => Promise<ProjectExportResult | null>;
+  exportKicadBundleForCurrentProject: (
+    destinationDir?: string
+  ) => Promise<ProjectExportResult | null>;
   addComponentToCurrentProject: (catalogId: string) => Promise<void>;
   removeComponentFromCurrentProject: (
     projectComponentId: string
@@ -454,7 +456,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }
   },
 
-  async exportKicadBundleForCurrentProject() {
+  async exportKicadBundleForCurrentProject(destinationDir) {
     if (get().isExporting) {
       return null;
     }
@@ -478,7 +480,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       });
       const kicadDir = await getProjectService().writeKicadBundle(
         document.id,
-        files
+        files,
+        destinationDir
       );
       const exportResult = buildKicadBundleExportResult(
         document.id,

@@ -23,7 +23,8 @@ export interface ProjectService {
    */
   writeKicadBundle: (
     projectId: string,
-    files: Record<string, string>
+    files: Record<string, string>,
+    destinationDir?: string
   ) => Promise<string>;
 }
 
@@ -256,8 +257,12 @@ const tauriProjectService: ProjectService = {
     return invokeTauri<string>("export_project", { projectId });
   },
 
-  async writeKicadBundle(projectId, files) {
-    return invokeTauri<string>("write_kicad_bundle", { projectId, files });
+  async writeKicadBundle(projectId, files, destinationDir) {
+    return invokeTauri<string>("write_kicad_bundle", {
+      projectId,
+      files,
+      destinationDir: destinationDir ?? null
+    });
   }
 };
 
