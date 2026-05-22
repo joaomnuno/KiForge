@@ -192,15 +192,32 @@ export function readSchematic(root: SList): Schematic {
 // ---------- builders ----------
 
 function positionNode(pos: SchematicPosition): SList {
-  const items: SNode[] = [atom("at"), atom(String(pos.x)), atom(String(pos.y))];
-  if (pos.angle !== undefined) {
-    items.push(atom(String(pos.angle)));
-  }
-  return list(...items);
+  // KiCad's schematic parser requires the orientation number on every
+  // (at x y angle) tuple inside a placed (symbol …). Default to 0 when
+  // the caller didn't supply one.
+  return list(
+    atom("at"),
+    atom(String(pos.x)),
+    atom(String(pos.y)),
+    atom(String(pos.angle ?? 0))
+  );
 }
 
 function propertyNode(property: SchematicSymbolProperty): SList {
-  return keywordList("property", str(property.name), str(property.value));
+  // KiCad 7+ schematic parser requires (at x y angle) and an
+  // (effects (font (size …))) on every (property …) child of a placed
+  // (symbol …). Emit a minimal valid shape so the file opens cleanly;
+  // KiCad's GUI will auto-place the labels on first load.
+  return list(
+    atom("property"),
+    str(property.name),
+    str(property.value),
+    list(atom("at"), atom("0"), atom("0"), atom("0")),
+    list(
+      atom("effects"),
+      list(atom("font"), list(atom("size"), atom("1.27"), atom("1.27")))
+    )
+  );
 }
 
 export function symbolNode(symbol: SchematicSymbol): SList {
