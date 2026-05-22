@@ -101,9 +101,13 @@ beforeEach(() => {
 
 describe("ProjectsPage web preview", () => {
   it("disables project deletion when not in the Tauri runtime", () => {
-    renderProjectsPage();
+    const { container } = renderProjectsPage();
 
-    const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
+    const deleteButtons = Array.from(
+      container.querySelectorAll<HTMLButtonElement>(
+        'button[title="Open the desktop app to delete projects."]'
+      )
+    );
     expect(deleteButtons.length).toBeGreaterThan(0);
     for (const deleteButton of deleteButtons) {
       expect(deleteButton).toBeDisabled();
