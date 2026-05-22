@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { catalog } from "../catalog/catalog";
 import { projectToKicadSymbols } from "./project-to-kicad-symbols";
 import type {
   ComponentCatalogEntry,
@@ -103,10 +104,58 @@ describe("projectToKicadSymbols", () => {
     );
     expect(symbols).toHaveLength(1);
     expect(symbols[0].libId).toBe("MCU_ST_STM32F4:STM32F405RGTx");
-    expect(symbols[0].at).toEqual({ x: 50, y: 50 });
-    expect(symbols[0].properties).toEqual([
-      { name: "Reference", value: "U1" },
-      { name: "Value", value: "STM32" }
+    expect(symbols[0].at).toEqual({ x: 63.5, y: 74.93 });
+    expect(symbols[0].fieldsAutoplaced).toBe(true);
+    expect(symbols[0].properties).toMatchObject([
+      { name: "Reference", value: "U1", at: { x: 63.5, y: 67.31 } },
+      { name: "Value", value: "STM32", at: { x: 63.5, y: 69.85 } }
+    ]);
+  });
+
+  it("uses the KiCad official RP2040 lib id from the real catalog", () => {
+    const rp2040 = catalog.controllers.find(
+      (controllerEntry) => controllerEntry.id === "rp2040"
+    );
+    if (!rp2040) {
+      throw new Error("Missing RP2040 catalog entry");
+    }
+
+    const symbols = projectToKicadSymbols(project(rp2040, []), {
+      uuid: makeUuidFactory()
+    });
+
+    expect(symbols).toHaveLength(1);
+    expect(symbols[0].libId).toBe("MCU_RaspberryPi:RP2040");
+    expect(symbols[0].at).toEqual({ x: 63.5, y: 74.93 });
+    expect(symbols[0].properties).toMatchObject([
+      { name: "Reference", value: "U1", at: { x: 65.6433, y: 119.38 } },
+      { name: "Value", value: "RP2040", at: { x: 65.6433, y: 121.92 } }
+    ]);
+  });
+
+  it("places the RP2040 and CH340K on the handmade mil-grid coordinates", () => {
+    const rp2040 = catalog.controllers.find(
+      (controllerEntry) => controllerEntry.id === "rp2040"
+    );
+    const ch340k = catalog.components.find(
+      (componentEntry) => componentEntry.id === "ch340k"
+    );
+    if (!rp2040 || !ch340k) {
+      throw new Error("Missing RP2040 or CH340K catalog entry");
+    }
+
+    const symbols = projectToKicadSymbols(
+      project(rp2040, [component("usb-uart", ch340k)]),
+      { uuid: makeUuidFactory() }
+    );
+
+    expect(symbols.map((symbol) => symbol.at)).toEqual([
+      { x: 63.5, y: 74.93 },
+      { x: 137.16, y: 68.58 }
+    ]);
+    expect(symbols[1].properties).toMatchObject([
+      { name: "Reference", value: "U2", at: { x: 137.16, y: 48.26 } },
+      { name: "Value", value: "CH340K", at: { x: 137.16, y: 50.8 } }
     ]);
   });
 
@@ -122,8 +171,8 @@ describe("projectToKicadSymbols", () => {
       { uuid: makeUuidFactory() }
     );
     expect(symbols).toHaveLength(3);
-    expect(symbols.map((s) => s.at.x)).toEqual([50, 100, 150]);
-    expect(symbols.map((s) => s.at.y)).toEqual([50, 50, 50]);
+    expect(symbols.map((s) => s.at.x)).toEqual([63.5, 114.3, 165.1]);
+    expect(symbols.map((s) => s.at.y)).toEqual([74.93, 74.93, 74.93]);
     expect(symbols.map((s) => s.properties[0].value)).toEqual([
       "U1",
       "U2",

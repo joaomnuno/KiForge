@@ -9,13 +9,16 @@ use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 const MAX_PROJECT_ID_LEN: usize = 96;
 const MAX_KICAD_BUNDLE_FILENAME_BYTES: usize = 255;
-const ALLOWED_KICAD_BUNDLE_EXTENSIONS: [&str; 6] = [
+const ALLOWED_KICAD_BUNDLE_EXTENSIONS: [&str; 7] = [
     ".kicad_sch",
     ".kicad_pro",
     ".kicad_sym",
     ".kicad_pcb",
     ".kicad_mod",
     ".kicad_wks",
+    // KiForge writes plain-text companions (e.g. KIFORGE-LICENSE.txt)
+    // alongside the schematic for symbol-source attribution.
+    ".txt",
 ];
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -1113,15 +1116,49 @@ mod tests {
 
         let result = store.write_kicad_bundle(
             "rocket-fc",
-            HashMap::from([("rocket-fc.txt".to_string(), "contents".to_string())]),
+            HashMap::from([("rocket-fc.exe".to_string(), "contents".to_string())]),
             None,
         );
 
         let error = result.expect_err("reject disallowed extension");
-        assert!(error.contains("rocket-fc.txt"));
+        assert!(error.contains("rocket-fc.exe"));
         assert!(error.contains(".kicad_sch"));
-        assert!(error.contains(".kicad_wks"));
+        assert!(error.contains(".txt"));
         assert!(!temp_dir.path().join("projects").exists());
+    }
+
+    #[test]
+    fn write_kicad_bundle_accepts_kiforge_license_txt() {
+        let temp_dir = tempdir().expect("tempdir");
+        let store = ProjectStore::new(temp_dir.path().to_path_buf());
+        let project = store
+            .create_project(sample_input())
+            .expect("create project");
+
+        store
+            .write_kicad_bundle(
+                &project.id,
+                HashMap::from([
+                    (
+                        "rocket-fc.kicad_sch".to_string(),
+                        "(kicad_sch)\n".to_string(),
+                    ),
+                    (
+                        "KIFORGE-LICENSE.txt".to_string(),
+                        "attribution notice\n".to_string(),
+                    ),
+                ]),
+                None,
+            )
+            .expect("write bundle with license txt");
+
+        let bundle_dir = temp_dir
+            .path()
+            .join("projects")
+            .join(&project.id)
+            .join("kicad");
+        assert!(bundle_dir.join("rocket-fc.kicad_sch").exists());
+        assert!(bundle_dir.join("KIFORGE-LICENSE.txt").exists());
     }
 
     #[test]

@@ -43,18 +43,28 @@ export interface SchematicPoint {
 export interface SchematicSymbolProperty {
   name: string;
   value: string;
+  at?: SchematicPosition;
 }
 
 export interface SchematicSymbol {
   libId: string;
   at: SchematicPosition;
   uuid: string;
+  fieldsAutoplaced?: boolean;
   properties: SchematicSymbolProperty[];
 }
 
 export interface SchematicWire {
   pts: SchematicPoint[];
   uuid?: string;
+}
+
+export interface SchematicHierarchicalLabel {
+  text: string;
+  at: SchematicPosition;
+  uuid: string;
+  shape?: "input" | "output" | "bidirectional" | "tri_state" | "passive";
+  justify?: "left" | "right" | "top" | "bottom";
 }
 
 export interface Schematic {
@@ -192,25 +202,55 @@ export function readSchematic(root: SList): Schematic {
 // ---------- builders ----------
 
 function positionNode(pos: SchematicPosition): SList {
-  const items: SNode[] = [atom("at"), atom(String(pos.x)), atom(String(pos.y))];
-  if (pos.angle !== undefined) {
-    items.push(atom(String(pos.angle)));
+  // KiCad's schematic parser requires the orientation number on every
+  // (at x y angle) tuple inside a placed (symbol …). Default to 0 when
+  // the caller didn't supply one.
+  return list(
+    atom("at"),
+    atom(String(pos.x)),
+    atom(String(pos.y)),
+    atom(String(pos.angle ?? 0))
+  );
+}
+
+function effectsNode(justify?: SchematicHierarchicalLabel["justify"]): SList {
+  const effects = list(
+    atom("effects"),
+    list(atom("font"), list(atom("size"), atom("1.27"), atom("1.27")))
+  );
+  if (justify) {
+    effects.items.push(keywordList("justify", atom(justify)));
   }
-  return list(...items);
+  return effects;
 }
 
 function propertyNode(property: SchematicSymbolProperty): SList {
-  return keywordList("property", str(property.name), str(property.value));
+  // KiCad 7+ schematic parser requires (at x y angle) and an
+  // (effects (font (size …))) on every (property …) child of a placed
+  // (symbol …). Callers that know the placed symbol size should provide
+  // absolute property coordinates; otherwise fall back to the origin.
+  const at = property.at ?? { x: 0, y: 0, angle: 0 };
+  return list(
+    atom("property"),
+    str(property.name),
+    str(property.value),
+    positionNode(at),
+    effectsNode()
+  );
 }
 
 export function symbolNode(symbol: SchematicSymbol): SList {
-  return list(
+  const items: SNode[] = [
     atom("symbol"),
     keywordList("lib_id", str(symbol.libId)),
     positionNode(symbol.at),
+    ...(symbol.fieldsAutoplaced
+      ? [keywordList("fields_autoplaced", atom("yes"))]
+      : []),
     keywordList("uuid", str(symbol.uuid)),
     ...symbol.properties.map(propertyNode)
-  );
+  ];
+  return list(...items);
 }
 
 export function wireNode(wire: SchematicWire): SList {
@@ -224,4 +264,17 @@ export function wireNode(wire: SchematicWire): SList {
     return list(atom("wire"), ptsList, keywordList("uuid", str(wire.uuid)));
   }
   return list(atom("wire"), ptsList);
+}
+
+export function hierarchicalLabelNode(
+  label: SchematicHierarchicalLabel
+): SList {
+  return list(
+    atom("hierarchical_label"),
+    str(label.text),
+    keywordList("shape", atom(label.shape ?? "input")),
+    positionNode(label.at),
+    effectsNode(label.justify),
+    keywordList("uuid", str(label.uuid))
+  );
 }

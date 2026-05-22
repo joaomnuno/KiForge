@@ -109,7 +109,7 @@ describe("sexpr parse", () => {
     expect(head(root)?.value).toBe("kicad_sch");
     const version = findChild(root, "version");
     expect(version).not.toBeNull();
-    expect(version && toNumber(version.items[1])).toBe(20231120);
+    expect(version && toNumber(version.items[1])).toBe(20250114);
     const generator = findChild(root, "generator");
     expect(generator?.items[1].kind).toBe("string");
     const lib = findChild(root, "lib_symbols");
