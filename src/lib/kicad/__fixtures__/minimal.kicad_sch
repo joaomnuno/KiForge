@@ -1,6 +1,7 @@
 (kicad_sch
-	(version 20231120)
+	(version 20250114)
 	(generator "kiforge")
+	(generator_version "0.1.0")
 	(uuid "00000000-0000-0000-0000-000000000001")
 	(paper "A4")
 	(lib_symbols)

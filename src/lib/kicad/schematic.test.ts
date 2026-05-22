@@ -24,7 +24,7 @@ const readFixture = (name: string) =>
 describe("readSchematic", () => {
   it("extracts header fields from the minimal fixture", () => {
     const sch = readSchematic(parse(readFixture("minimal.kicad_sch")));
-    expect(sch.version).toBe(20231120);
+    expect(sch.version).toBe(20250114);
     expect(sch.generator).toBe("kiforge");
     expect(sch.uuid).toBe("00000000-0000-0000-0000-000000000001");
     expect(sch.paper).toBe("A4");

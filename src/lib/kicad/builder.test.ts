@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { atom, str, list, keywordList, schematicHeader } from "./builder";
+import {
+  KICAD_SCHEMATIC_VERSION,
+  KIFORGE_GENERATOR_VERSION,
+  atom,
+  str,
+  list,
+  keywordList,
+  schematicHeader
+} from "./builder";
 import { findChild, head, parse, toNumber } from "./sexpr";
 import { stringify } from "./stringify";
 
@@ -33,6 +41,7 @@ describe("builder", () => {
     expect(head(root)?.value).toBe("kicad_sch");
     expect(findChild(root, "version")).not.toBeNull();
     expect(findChild(root, "generator")).not.toBeNull();
+    expect(findChild(root, "generator_version")).not.toBeNull();
     expect(findChild(root, "uuid")).not.toBeNull();
     expect(findChild(root, "paper")).not.toBeNull();
     expect(findChild(root, "lib_symbols")).not.toBeNull();
@@ -42,13 +51,19 @@ describe("builder", () => {
   it("schematicHeader() defaults are sensible", () => {
     const root = schematicHeader({ uuid: "abc-def" });
     const version = findChild(root, "version");
-    expect(version && toNumber(version.items[1])).toBe(20231120);
+    expect(version && toNumber(version.items[1])).toBe(KICAD_SCHEMATIC_VERSION);
     const generator = findChild(root, "generator");
     expect(
       generator && generator.items[1].kind === "string"
         ? generator.items[1].value
         : null
     ).toBe("kiforge");
+    const generatorVersion = findChild(root, "generator_version");
+    expect(
+      generatorVersion && generatorVersion.items[1].kind === "string"
+        ? generatorVersion.items[1].value
+        : null
+    ).toBe(KIFORGE_GENERATOR_VERSION);
     const paper = findChild(root, "paper");
     expect(
       paper && paper.items[1].kind === "string" ? paper.items[1].value : null

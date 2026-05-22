@@ -4,12 +4,17 @@ import {
   findChild,
   findChildren,
   head,
+  KICAD_SCHEMATIC_VERSION,
+  KIFORGE_GENERATOR_VERSION,
   parse,
   parseKicadPro,
   readSchematic,
+  toNumber,
+  type SchematicHierarchicalLabel,
   type SchematicSymbol,
   type SchematicWire,
-  type SList
+  type SList,
+  type SNode
 } from "../../lib/kicad";
 import { loadVendoredSymbols, parseRaw } from "../catalog/load-vendored-symbol";
 import type { ProjectDocument } from "../../types/domain";
@@ -41,6 +46,29 @@ function vendoredSymbolBody(raw: string, libId: string): SList {
   return body;
 }
 
+function stringArg(node: SList, index: number): string | null {
+  const child = node.items[index];
+  return child?.kind === "string" ? child.value : null;
+}
+
+function collectLists(node: SNode, keyword: string): SList[] {
+  if (node.kind !== "list") {
+    return [];
+  }
+
+  const matches = head(node)?.value === keyword ? [node] : [];
+  return matches.concat(
+    node.items.flatMap((child) => collectLists(child, keyword))
+  );
+}
+
+function pinPairs(symbol: SList) {
+  return collectLists(symbol, "pin").map((pin) => ({
+    name: stringArg(findChild(pin, "name")!, 1),
+    number: stringArg(findChild(pin, "number")!, 1)
+  }));
+}
+
 describe("buildKicadBundle", () => {
   it("emits a .kicad_sch and a .kicad_pro named after the project id, plus the license notice", () => {
     const files = buildKicadBundle(mkProject());
@@ -70,6 +98,15 @@ describe("buildKicadBundle", () => {
     expect(
       gen && gen.items[1].kind === "string" ? gen.items[1].value : null
     ).toBe("kiforge-test");
+  });
+
+  it("schematic file uses the KiCad 9 schematic version and KiForge generator version", () => {
+    const files = buildKicadBundle(mkProject());
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    const version = findChild(root, "version");
+    expect(version && toNumber(version.items[1])).toBe(KICAD_SCHEMATIC_VERSION);
+    const generatorVersion = findChild(root, "generator_version");
+    expect(stringArg(generatorVersion!, 1)).toBe(KIFORGE_GENERATOR_VERSION);
   });
 
   it("project file parses as a valid .kicad_pro with version 1", () => {
@@ -137,6 +174,25 @@ describe("buildKicadBundle", () => {
     expect(sch.wires[0]).toEqual(wire);
   });
 
+  it("embeds hierarchical labels passed via options", () => {
+    const label: SchematicHierarchicalLabel = {
+      text: "UART_TXD",
+      at: { x: 75.4, y: 88.1, angle: 0 },
+      justify: "left",
+      uuid: "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    };
+    const files = buildKicadBundle(mkProject(), {
+      hierarchicalLabels: [label]
+    });
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    const labels = findChildren(root, "hierarchical_label");
+    expect(labels).toHaveLength(1);
+    expect(stringArg(labels[0], 1)).toBe("UART_TXD");
+    const at = findChild(labels[0], "at");
+    expect(at && toNumber(at.items[1])).toBe(75.4);
+    expect(at && toNumber(at.items[2])).toBe(88.1);
+  });
+
   it("preserves order: header keys first, then symbols, then wires", () => {
     const symbol: SchematicSymbol = {
       libId: "X:Y",
@@ -166,6 +222,7 @@ describe("buildKicadBundle", () => {
     expect(childHeads).toEqual([
       "version",
       "generator",
+      "generator_version",
       "uuid",
       "paper",
       "lib_symbols",
@@ -324,6 +381,39 @@ describe("buildKicadBundle", () => {
     expect(childSymbols).toHaveLength(1);
     const nameNode = childSymbols[0].items[1];
     expect(nameNode.kind === "string" ? nameNode.value : null).toBe(libId);
+  });
+
+  it("embeds the vendored RP2040 KiCad official symbol body and key pins", () => {
+    const libId = "MCU_RaspberryPi:RP2040";
+    const body = loadVendoredSymbols().get(libId);
+    if (!body) {
+      throw new Error(`Missing vendored body for ${libId}`);
+    }
+
+    const symbol: SchematicSymbol = {
+      libId,
+      at: { x: 25.4, y: 25.4, angle: 0 },
+      uuid: "99999999-9999-9999-9999-999999999999",
+      properties: []
+    };
+    const files = buildKicadBundle(mkProject(), {
+      symbols: [symbol],
+      vendoredSymbols: new Map([[libId, body]])
+    });
+    const root = parse(files["rocket-fc-rev-a.kicad_sch"]);
+    const libSymbols = findChild(root, "lib_symbols");
+    expect(libSymbols).not.toBeNull();
+    const childSymbols = findChildren(libSymbols!, "symbol");
+    const rp2040 = childSymbols.find((child) => stringArg(child, 1) === libId);
+    expect(rp2040).toBeDefined();
+    expect(pinPairs(rp2040!)).toEqual(
+      expect.arrayContaining([
+        { name: "USB_DM", number: "46" },
+        { name: "USB_DP", number: "47" },
+        { name: "GPIO0", number: "2" },
+        { name: "GPIO29_ADC3", number: "41" }
+      ])
+    );
   });
 
   it("emits a KIFORGE-LICENSE.txt with the symbol-source attribution", () => {

@@ -6,7 +6,7 @@
 
 ## Context
 
-PR #38 wired the bundle exporter to place stock KiCad symbols for the four catalog parts that exist in KiCad 7+ stock libraries (STM32F405RG, STM32H743ZI, RP2040, W25Q128JV). The four remaining catalog parts have **no stock KiCad symbol** and are currently skipped at export time:
+PR #38 wired the bundle exporter to place stock KiCad symbols for the four catalog parts that exist in KiCad stock libraries (STM32F405RG, STM32H743ZI, RP2040, W25Q128JV). A KiCad 9 smoke test later showed RP2040's library id had drifted, so RP2040 is now vendored from the official KiCad symbol library as well. The four remaining catalog parts have **no stock KiCad symbol** and were initially skipped at export time:
 
 | Part                           | Role      | Stock KiCad symbol?           |
 | ------------------------------ | --------- | ----------------------------- |
@@ -31,12 +31,13 @@ The runtime exporter only **reads** vendored files; it never **writes** to `cata
 
 | Part                           | Source                                         | License                                                                 | Vendored file                                         | Notes                                                  |
 | ------------------------------ | ---------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------ |
+| RP2040                         | KiCad official `MCU_RaspberryPi.kicad_sym`     | CC-BY-SA 4.0 + design exception                                         | `catalog/symbols/kicad-official/RP2040.kicad_sym`     | Extract single symbol from KiCad's stock lib.          |
 | Tag-Connect 6-pin (TC2030-IDC) | KiCad official `Connector.kicad_sym`           | CC-BY-SA 4.0 + design exception                                         | `catalog/symbols/kicad-official/TagConnect.kicad_sym` | Extract single symbol from KiCad's stock lib.          |
 | BMP388                         | SnapEDA / SnapMagic download                   | CC-BY-SA 4.0 + design exception 1.0                                     | `catalog/symbols/snapeda/BMP388.kicad_sym`            | Counts against SnapEDA's 10-file-per-distribution cap. |
 | ICM-42688-P                    | SnapEDA / SnapMagic download                   | CC-BY-SA 4.0 + design exception 1.0                                     | `catalog/symbols/snapeda/ICM-42688-P.kicad_sym`       | Same cap.                                              |
 | CH340K                         | SnapEDA primary; WCH community lib as fallback | CC-BY-SA 4.0 + design exception 1.0 (SnapEDA) / unspecified (community) | `catalog/symbols/snapeda/CH340K.kicad_sym`            | Prefer SnapEDA for licence clarity.                    |
 
-Vendored count after this slice: **4 files**, well under SnapEDA's 10-file ceiling.
+Vendored count after this slice: **5 files**, well under SnapEDA's 10-file ceiling.
 
 ## License + attribution
 
@@ -66,6 +67,7 @@ Not required (but ship anyway for hygiene):
 
 - `catalog/symbols/` (new directory)
   - `LICENSE.md` documenting both source licenses + design exceptions verbatim.
+  - `kicad-official/RP2040.kicad_sym`
   - `kicad-official/TagConnect.kicad_sym`
   - `snapeda/BMP388.kicad_sym`
   - `snapeda/ICM-42688-P.kicad_sym`
@@ -85,7 +87,7 @@ Not part of this ADR (separate slices, each its own PR):
 
 ## What does NOT change
 
-- `kicadLibId` semantics from PR #38: a part with **only** a `kicadLibId` (no `vendoredSymbolPath`) keeps relying on the user's installed KiCad library. The four stock-library parts stay as-is.
+- `kicadLibId` semantics from PR #38: a part with **only** a `kicadLibId` (no matching vendored body) keeps relying on the user's installed KiCad library. STM32F405RG, STM32H743ZI, and W25Q128JV stay on stock-library lookup.
 - The runtime never downloads symbols. Network is not added to Tauri capabilities.
 - Rust side. Symbol vendoring is frontend-only — the Tauri write command keeps writing whatever bytes the frontend sends; it has no notion of `lib_symbols`.
 

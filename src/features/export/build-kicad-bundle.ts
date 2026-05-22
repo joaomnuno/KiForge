@@ -21,10 +21,12 @@
 import {
   findChild,
   head,
+  hierarchicalLabelNode,
   schematicHeader,
   stringify,
   symbolNode,
   wireNode,
+  type SchematicHierarchicalLabel,
   type SchematicSymbol,
   type SchematicWire,
   type SList
@@ -36,10 +38,14 @@ export interface KicadBundleOptions {
   schematicUuid?: string;
   /** Override the `generator` field written into the schematic. */
   generator?: string;
+  /** Override the `generator_version` field written into the schematic. */
+  generatorVersion?: string;
   /** Symbols to place in the schematic. Empty by default. */
   symbols?: SchematicSymbol[];
   /** Wires to add to the schematic. Empty by default. */
   wires?: SchematicWire[];
+  /** Hierarchical labels to add to the schematic. Empty by default. */
+  hierarchicalLabels?: SchematicHierarchicalLabel[];
   /**
    * Parsed vendored symbol bodies keyed by `lib_id`. Any placed symbol
    * whose `libId` matches a key has the corresponding body inlined into
@@ -119,9 +125,14 @@ export function buildKicadBundle(
   const generator = options.generator ?? "kiforge";
   const symbols = options.symbols ?? [];
   const wires = options.wires ?? [];
+  const hierarchicalLabels = options.hierarchicalLabels ?? [];
   const vendoredSymbols = options.vendoredSymbols;
 
-  const root = schematicHeader({ uuid, generator });
+  const root = schematicHeader({
+    uuid,
+    generator,
+    generatorVersion: options.generatorVersion
+  });
 
   if (vendoredSymbols && vendoredSymbols.size > 0) {
     const libSymbols = findChild(root, "lib_symbols");
@@ -135,6 +146,9 @@ export function buildKicadBundle(
     }
   }
 
+  for (const label of hierarchicalLabels) {
+    root.items.push(hierarchicalLabelNode(label));
+  }
   for (const symbol of symbols) {
     root.items.push(symbolNode(symbol));
   }

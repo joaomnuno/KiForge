@@ -3,7 +3,8 @@ import { applyDerivedProjectState } from "../connections/planner";
 import { findComponent } from "../catalog/catalog";
 import { loadVendoredSymbols } from "../catalog/load-vendored-symbol";
 import { buildKicadBundle } from "../export/build-kicad-bundle";
-import { projectToKicadSymbols } from "../export/project-to-kicad-symbols";
+import { projectToKicadHierarchicalLabels } from "../export/project-to-kicad-labels";
+import { projectToKicadSymbolPlacements } from "../export/project-to-kicad-symbols";
 import type {
   ConnectionRecord,
   CreateProjectInput,
@@ -471,12 +472,20 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     try {
       const workspaceProject = get().currentProject;
-      const symbols = workspaceProject
-        ? projectToKicadSymbols(workspaceProject)
+      const vendoredSymbols = loadVendoredSymbols();
+      const placements = workspaceProject
+        ? projectToKicadSymbolPlacements(workspaceProject)
+        : [];
+      const symbols = placements.map((placement) => placement.symbol);
+      const hierarchicalLabels = workspaceProject
+        ? projectToKicadHierarchicalLabels(workspaceProject, placements, {
+            vendoredSymbols
+          })
         : [];
       const files = buildKicadBundle(document, {
         symbols,
-        vendoredSymbols: loadVendoredSymbols()
+        hierarchicalLabels,
+        vendoredSymbols
       });
       const kicadDir = await getProjectService().writeKicadBundle(
         document.id,

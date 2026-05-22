@@ -12,6 +12,8 @@
 import type { SAtom, SList, SNode, SString, SourcePos } from "./sexpr";
 
 const SYNTHETIC: SourcePos = { line: 0, column: 0, offset: 0 };
+export const KICAD_SCHEMATIC_VERSION = 20250114;
+export const KIFORGE_GENERATOR_VERSION = "0.1.0";
 
 export function atom(value: string): SAtom {
   return { kind: "atom", value, pos: SYNTHETIC };
@@ -31,10 +33,12 @@ export function keywordList(keyword: string, ...args: SNode[]): SList {
 }
 
 export interface SchematicHeaderOptions {
-  /** KiCad sets this to a date stamp like `20231120`. */
+  /** KiCad sets this to a date stamp like `20250114`. */
   version?: number;
   /** Identifies the writing tool. */
   generator?: string;
+  /** Version of the writing tool. */
+  generatorVersion?: string;
   /** UUIDv4 string identifying the schematic. */
   uuid: string;
   /** Paper size token, e.g. `"A4"`, `"USLetter"`. */
@@ -50,8 +54,15 @@ export interface SchematicHeaderOptions {
 export function schematicHeader(opts: SchematicHeaderOptions): SList {
   return list(
     atom("kicad_sch"),
-    keywordList("version", atom(String(opts.version ?? 20231120))),
+    keywordList(
+      "version",
+      atom(String(opts.version ?? KICAD_SCHEMATIC_VERSION))
+    ),
     keywordList("generator", str(opts.generator ?? "kiforge")),
+    keywordList(
+      "generator_version",
+      str(opts.generatorVersion ?? KIFORGE_GENERATOR_VERSION)
+    ),
     keywordList("uuid", str(opts.uuid)),
     keywordList("paper", str(opts.paper ?? "A4")),
     keywordList("lib_symbols"),
